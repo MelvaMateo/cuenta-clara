@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#b5179e">
+  <link rel="manifest" href="manifest.json">
+  <title>Cuenta Clara</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Cuenta Clara</h1>
+    <p>YCC Beauty Studio</p>
+  </header>
+
+  <main>
+    <!-- ===== Inventario ===== -->
+    <section id="inventario" class="tab active">
+      <form id="formProducto" class="form">
+        <h2>Agregar producto</h2>
+        <input name="nombre" placeholder="Nombre del producto" required>
+        <div class="row">
+          <input name="costo" type="number" step="0.01" placeholder="Costo (L)">
+          <input name="precio" type="number" step="0.01" placeholder="Precio (L)" required>
+        </div>
+        <div class="row">
+          <input name="stock" type="number" placeholder="Stock">
+          <input name="stockMinimo" type="number" placeholder="Mínimo">
+        </div>
+        <button type="submit">Guardar producto</button>
+      </form>
+      <input id="buscarProd" class="buscar" placeholder="Buscar producto...">
+      <div id="listaProductos" class="lista"></div>
+    </section>
+
+    <!-- ===== Fiados ===== -->
+    <section id="fiados" class="tab">
+      <div class="resumen-mini">Total por cobrar: <strong id="totalPorCobrar">L 0.00</strong></div>
+      <form id="formFiado" class="form">
+        <h2>Nuevo fiado</h2>
+        <input name="clienta" placeholder="Nombre de la clienta" required>
+        <input name="descripcion" placeholder="¿Qué llevó? (opcional)">
+        <input name="monto" type="number" step="0.01" placeholder="Monto (L)" required>
+        <button type="submit">Guardar fiado</button>
+      </form>
+      <input id="buscarFiado" class="buscar" placeholder="Buscar por nombre...">
+      <div id="listaFiados" class="lista"></div>
+    </section>
+
+    <!-- ===== Resumen ===== -->
+    <section id="resumen" class="tab">
+      <h2>Resumen</h2>
+      <div class="grid">
+        <div class="stat"><span id="rPorCobrar">L 0.00</span><label>Por cobrar</label></div>
+        <div class="stat"><span id="rBajoStock">0</span><label>Bajo stock</label></div>
+        <div class="stat"><span id="rValorInv">L 0.00</span><label>Valor inventario</label></div>
+        <div class="stat"><span id="rProductos">0</span><label>Productos</label></div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <button class="tabbtn active" data-tab="inventario" onclick="showTab('inventario')">Inventario</button>
+    <button class="tabbtn" data-tab="fiados" onclick="showTab('fiados')">Fiados</button>
+    <button class="tabbtn" data-tab="resumen" onclick="showTab('resumen')">Resumen</button>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>
