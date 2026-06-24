@@ -1,6 +1,6 @@
 /* Service worker mínimo: cachea la app para que cargue sin internet (PWA). */
 const CACHE = 'cuenta-clara-v1';
-const ASSETS = ['./', './index.html', './styles.css', './app.js', './manifest.json', './icon.svg'];
+const ASSETS = ['./', './index.html', './manifest.json', './icon.svg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));

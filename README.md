@@ -20,23 +20,23 @@ Fuera de la v1: agenda de citas (ya usa otra app), reportes de margen por caja y
 
 ## Tecnologías
 
-- **Prototipo (este repo):** PWA en HTML/CSS/JavaScript, datos en `localStorage` (funciona sin backend para la demostración).
+- **Prototipo (este repo):** PWA en un solo archivo HTML con CSS y JavaScript adentro; datos en `localStorage` (funciona sin backend para la demostración).
 - **Producción (planeada):** Supabase (PostgreSQL + Auth + respaldos) y hosting en Vercel. Ver la arquitectura en [PLAN.md](PLAN.md).
 
 ## Cómo probarlo
 
-1. Abrí `index.html` en el navegador del celular o la computadora, **o**
-2. Servílo con cualquier servidor estático (recomendado para que funcione como PWA y offline):
-   ```
-   npx serve .
-   ```
+Abrí `index.html` en el navegador del celular o la computadora (doble clic). Los datos se guardan en el mismo dispositivo (localStorage).
 
-Los datos se guardan en el mismo dispositivo (localStorage).
+Para que funcione como PWA instalable y offline, servílo con cualquier servidor estático:
+
+```
+npx serve .
+```
 
 ## Estructura
 
 | Archivo | Qué es |
 |---|---|
-| `index.html`, `styles.css`, `app.js` | La aplicación |
+| `index.html` | La aplicación completa (HTML, CSS y JavaScript en un solo archivo autónomo) |
 | `manifest.json`, `sw.js`, `icon.svg` | Soporte PWA (instalable, offline) |
 | `PLAN.md` | Plan y diseño completo: problema, backlog, arquitectura, calidad, despliegue y validación |
