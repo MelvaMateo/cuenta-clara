@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#b5179e">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <title>Iniciar sesión — Cuenta Clara</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: #faf6f8;
+      color: #2b2b2b;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 20px;
+      line-height: 1.5;
+    }
+
+    .marca {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-bottom: 18px;
+    }
+    .marca img { width: 36px; height: 36px; border-radius: 10px; }
+
+    .caja {
+      width: 100%;
+      max-width: 380px;
+      background: #fff;
+      border-radius: 16px;
+      padding: 26px 22px;
+      box-shadow: 0 4px 18px rgba(114, 9, 183, .10);
+      border: 1px solid #efe4ec;
+    }
+    .caja h1 { font-size: 1.25rem; margin-bottom: 4px; }
+    .caja > p.sub { color: #6b6470; font-size: .9rem; margin-bottom: 20px; }
+
+    label { display: block; font-size: .85rem; font-weight: 600; margin-bottom: 5px; }
+    input {
+      width: 100%;
+      padding: 11px;
+      margin-bottom: 14px;
+      border: 1px solid #e3d7dd;
+      border-radius: 10px;
+      font-size: .95rem;
+      font-family: inherit;
+    }
+    input:focus { outline: 2px solid #b5179e; outline-offset: 1px; border-color: transparent; }
+
+    button {
+      background: #b5179e;
+      color: #fff;
+      border: none;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: .95rem;
+      font-weight: 600;
+      width: 100%;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    button:active { opacity: .85; }
+
+    .error {
+      background: #ffd6d6;
+      color: #c1121f;
+      border-radius: 10px;
+      padding: 9px 12px;
+      font-size: .85rem;
+      margin-bottom: 14px;
+      display: none;
+    }
+    .error.visible { display: block; }
+
+    .ayuda {
+      margin-top: 16px;
+      background: #f8f1f6;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: .8rem;
+      color: #6b6470;
+    }
+    .ayuda code { background: #fff; padding: 1px 5px; border-radius: 5px; color: #7209b7; font-weight: 600; }
+
+    .volver { margin-top: 18px; font-size: .85rem; }
+    .volver a { color: #7209b7; }
+  </style>
+</head>
+<body>
+
+  <div class="marca">
+    <img src="icon.svg" alt="">
+    Cuenta Clara
+  </div>
+
+  <main class="caja">
+    <h1>Iniciar sesión</h1>
+    <p class="sub">Entrá para ver tu inventario y tus fiados.</p>
+
+    <div id="error" class="error" role="alert"></div>
+
+    <form id="formLogin" novalidate>
+      <label for="usuario">Usuario</label>
+      <input id="usuario" name="usuario" autocomplete="username" autocapitalize="none" required>
+
+      <label for="clave">Contraseña</label>
+      <input id="clave" name="clave" type="password" autocomplete="current-password" required>
+
+      <button type="submit">Entrar</button>
+    </form>
+
+    <p class="ayuda">
+      Cuenta de demostración: usuario <code>yaleni</code>, contraseña <code>ycc2026</code>.
+    </p>
+  </main>
+
+  <p class="volver"><a href="index.html">&larr; Volver al inicio</a></p>
+
+  <script>
+  /* Login del prototipo: valida contra una cuenta de demostracion y guarda la
+     sesion en localStorage. En produccion esto se reemplaza por Supabase Auth
+     (ver PLAN.md); nunca se compara una contrasena en el cliente. */
+
+  const DEMO = { usuario: 'yaleni', clave: 'ycc2026', nombre: 'Yaleni' };
+
+  function mostrarError(msg) {
+    const caja = document.getElementById('error');
+    caja.textContent = msg;
+    caja.classList.add('visible');
+  }
+
+  document.getElementById('formLogin').addEventListener('submit', e => {
+    e.preventDefault();
+    document.getElementById('error').classList.remove('visible');
+
+    const usuario = document.getElementById('usuario').value.trim().toLowerCase();
+    const clave = document.getElementById('clave').value;
+
+    if (!usuario || !clave) {
+      mostrarError('Escribí tu usuario y tu contraseña.');
+      return;
+    }
+    if (usuario !== DEMO.usuario || clave !== DEMO.clave) {
+      mostrarError('Usuario o contraseña incorrectos.');
+      return;
+    }
+
+    localStorage.setItem('sesion', JSON.stringify({
+      usuario: DEMO.usuario,
+      nombre: DEMO.nombre,
+      desde: new Date().toISOString(),
+    }));
+    location.href = 'app.html';
+  });
+
+  /* Si ya hay sesion abierta, no tiene sentido pedir el login otra vez. */
+  if (localStorage.getItem('sesion')) location.replace('app.html');
+  </script>
+
+</body>
+</html>

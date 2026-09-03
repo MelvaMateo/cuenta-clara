@@ -2,7 +2,7 @@
   "name": "Cuenta Clara",
   "short_name": "CuentaClara",
   "description": "Inventario y fiados para tu salón, sin cuaderno.",
-  "start_url": "./index.html",
+  "start_url": "./app.html",
   "display": "standalone",
   "background_color": "#faf6f8",
   "theme_color": "#b5179e",

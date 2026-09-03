@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#b5179e">
+  <link rel="manifest" href="manifest.json">
+  <title>Cuenta Clara</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: #faf6f8;
+      color: #2b2b2b;
+      padding-bottom: 70px;
+    }
+
+    header {
+      background: linear-gradient(135deg, #b5179e, #7209b7);
+      color: #fff;
+      padding: 18px 16px;
+    }
+    header h1 { font-size: 1.4rem; }
+    header p { opacity: .85; font-size: .85rem; }
+    .header-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .salir {
+      width: auto;
+      background: rgba(255,255,255,.16);
+      border: 1px solid rgba(255,255,255,.45);
+      padding: 6px 12px;
+      font-size: .8rem;
+      flex-shrink: 0;
+    }
+
+    main { padding: 16px; max-width: 520px; margin: 0 auto; }
+
+    .tab { display: none; }
+    .tab.active { display: block; }
+
+    h2 { font-size: 1rem; margin-bottom: 10px; }
+
+    .form {
+      background: #fff;
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+      margin-bottom: 14px;
+    }
+    .form input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 8px;
+      border: 1px solid #e3d7dd;
+      border-radius: 10px;
+      font-size: .95rem;
+    }
+    .row { display: flex; gap: 8px; }
+    .row input { flex: 1; }
+
+    button {
+      background: #b5179e;
+      color: #fff;
+      border: none;
+      padding: 11px;
+      border-radius: 10px;
+      font-size: .95rem;
+      width: 100%;
+      cursor: pointer;
+    }
+    button:active { opacity: .85; }
+
+    .buscar {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #e3d7dd;
+      border-radius: 10px;
+      margin-bottom: 10px;
+    }
+
+    .lista { display: flex; flex-direction: column; gap: 8px; }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+      border-left: 4px solid #b5179e;
+    }
+    .card.bajo { border-left-color: #e63946; background: #fff5f5; }
+    .card.pagado { opacity: .6; border-left-color: #2a9d8f; }
+    .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+
+    .muted { color: #777; font-size: .82rem; }
+
+    .pill { background: #f0e6ee; padding: 2px 8px; border-radius: 20px; font-size: .78rem; }
+    .pill-rojo { background: #ffd6d6; color: #c1121f; }
+    .pill-verde { background: #d6f5ef; color: #1b7a6b; }
+
+    .mini {
+      width: auto;
+      padding: 6px 12px;
+      font-size: .8rem;
+      margin-top: 8px;
+      background: #7209b7;
+    }
+
+    .vacio { color: #999; text-align: center; padding: 20px; }
+
+    .resumen-mini {
+      background: #fff;
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
+
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .stat {
+      background: #fff;
+      border-radius: 14px;
+      padding: 18px;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    }
+    .stat span { font-size: 1.5rem; font-weight: 700; color: #7209b7; display: block; }
+    .stat label { font-size: .8rem; color: #777; }
+
+    .tabbar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      display: flex;
+      background: #fff;
+      border-top: 1px solid #eee;
+    }
+    .tabbtn {
+      flex: 1;
+      background: none;
+      color: #888;
+      border: none;
+      padding: 12px 4px;
+      font-size: .8rem;
+      border-radius: 0;
+    }
+    .tabbtn.active { color: #b5179e; font-weight: 600; border-top: 2px solid #b5179e; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-top">
+      <h1>Cuenta Clara</h1>
+      <button class="salir" onclick="salir()">Salir</button>
+    </div>
+    <p id="saludo">YCC Beauty Studio</p>
+  </header>
+
+  <main>
+    <!-- ===== Inventario ===== -->
+    <section id="inventario" class="tab active">
+      <form id="formProducto" class="form">
+        <h2>Agregar producto</h2>
+        <input name="nombre" placeholder="Nombre del producto" required>
+        <div class="row">
+          <input name="costo" type="number" step="0.01" placeholder="Costo (L)">
+          <input name="precio" type="number" step="0.01" placeholder="Precio (L)" required>
+        </div>
+        <div class="row">
+          <input name="stock" type="number" placeholder="Stock">
+          <input name="stockMinimo" type="number" placeholder="Mínimo">
+        </div>
+        <button type="submit">Guardar producto</button>
+      </form>
+      <input id="buscarProd" class="buscar" placeholder="Buscar producto...">
+      <div id="listaProductos" class="lista"></div>
+    </section>
+
+    <!-- ===== Fiados ===== -->
+    <section id="fiados" class="tab">
+      <div class="resumen-mini">Total por cobrar: <strong id="totalPorCobrar">L 0.00</strong></div>
+      <form id="formFiado" class="form">
+        <h2>Nuevo fiado</h2>
+        <input name="clienta" placeholder="Nombre de la clienta" required>
+        <input name="descripcion" placeholder="¿Qué llevó? (opcional)">
+        <input name="monto" type="number" step="0.01" placeholder="Monto (L)" required>
+        <button type="submit">Guardar fiado</button>
+      </form>
+      <input id="buscarFiado" class="buscar" placeholder="Buscar por nombre...">
+      <div id="listaFiados" class="lista"></div>
+    </section>
+
+    <!-- ===== Resumen ===== -->
+    <section id="resumen" class="tab">
+      <h2>Resumen</h2>
+      <div class="grid">
+        <div class="stat"><span id="rPorCobrar">L 0.00</span><label>Por cobrar</label></div>
+        <div class="stat"><span id="rBajoStock">0</span><label>Bajo stock</label></div>
+        <div class="stat"><span id="rValorInv">L 0.00</span><label>Valor inventario</label></div>
+        <div class="stat"><span id="rProductos">0</span><label>Productos</label></div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <button class="tabbtn active" data-tab="inventario" onclick="showTab('inventario')">Inventario</button>
+    <button class="tabbtn" data-tab="fiados" onclick="showTab('fiados')">Fiados</button>
+    <button class="tabbtn" data-tab="resumen" onclick="showTab('resumen')">Resumen</button>
+  </nav>
+
+  <script>
+  /* Cuenta Clara — prototipo (un solo archivo).
+     Datos guardados en localStorage del dispositivo (para la demostración).
+     En producción esto se reemplaza por Supabase (ver PLAN.md). */
+
+  /* ===== Sesión ===== */
+  /* Sin login no se entra a la app: se vuelve a la pantalla de acceso. */
+  const sesion = JSON.parse(localStorage.getItem('sesion') || 'null');
+  if (!sesion) location.replace('login.html');
+
+  function salir() {
+    localStorage.removeItem('sesion');
+    location.replace('login.html');
+  }
+
+  const DB = {
+    get(k) { return JSON.parse(localStorage.getItem(k) || '[]'); },
+    set(k, v) { localStorage.setItem(k, JSON.stringify(v)); },
+  };
+
+  const fmt = n => 'L ' + Number(n).toFixed(2);            // lempiras con 2 decimales
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+  /* ===== Navegación por pestañas ===== */
+  function showTab(id) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tabbtn').forEach(b => b.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    document.querySelector(`[data-tab="${id}"]`).classList.add('active');
+    if (id === 'resumen') renderResumen();
+  }
+
+  /* ===== Inventario (US1, US2, US3) ===== */
+  function addProducto(e) {
+    e.preventDefault();
+    const f = e.target;
+    const nombre = f.nombre.value.trim();
+    const precio = parseFloat(f.precio.value);
+    if (!nombre || isNaN(precio)) {            // validación (US1)
+      alert('Falta el nombre o el precio.');
+      return;
+    }
+    const productos = DB.get('productos');
+    productos.push({
+      id: uid(),
+      nombre,
+      costo: parseFloat(f.costo.value) || 0,
+      precio,
+      stock: parseInt(f.stock.value) || 0,
+      stockMinimo: parseInt(f.stockMinimo.value) || 0,
+    });
+    DB.set('productos', productos);
+    f.reset();
+    renderProductos();
+  }
+
+  function venderProducto(id) {
+    const productos = DB.get('productos');
+    const p = productos.find(x => x.id === id);
+    if (!p) return;
+    const cant = parseInt(prompt(`¿Cuántas unidades de "${p.nombre}" vendiste?`, '1'));
+    if (!cant || cant <= 0) return;
+    if (cant > p.stock) { alert('No hay suficiente stock.'); return; }
+    p.stock -= cant;                            // descuenta del stock (US2)
+    DB.set('productos', productos);
+    renderProductos();
+  }
+
+  function renderProductos() {
+    const q = (document.getElementById('buscarProd').value || '').toLowerCase();
+    const productos = DB.get('productos').filter(p => p.nombre.toLowerCase().includes(q));
+    const cont = document.getElementById('listaProductos');
+    if (productos.length === 0) {
+      cont.innerHTML = '<p class="vacio">Sin productos todavía.</p>';
+      return;
+    }
+    cont.innerHTML = productos.map(p => {
+      const bajo = p.stock <= p.stockMinimo;     // alerta de bajo stock (US3)
+      const margen = p.precio - p.costo;
+      return `<div class="card ${bajo ? 'bajo' : ''}">
+        <div class="card-top">
+          <strong>${p.nombre}</strong>
+          <span class="pill ${bajo ? 'pill-rojo' : ''}">stock: ${p.stock}${bajo ? ' !' : ''}</span>
+        </div>
+        <div class="muted">Precio ${fmt(p.precio)} · Costo ${fmt(p.costo)} · Margen ${fmt(margen)}</div>
+        <button class="mini" onclick="venderProducto('${p.id}')">Vender</button>
+      </div>`;
+    }).join('');
+  }
+
+  /* ===== Fiados (US6, US7, US8) ===== */
+  function addFiado(e) {
+    e.preventDefault();
+    const f = e.target;
+    const clienta = f.clienta.value.trim();
+    const monto = parseFloat(f.monto.value);
+    if (!clienta || isNaN(monto) || monto <= 0) {   // validación (US6)
+      alert('Falta la clienta o un monto válido.');
+      return;
+    }
+    const fiados = DB.get('fiados');
+    fiados.push({
+      id: uid(),
+      clienta,
+      descripcion: f.descripcion.value.trim(),
+      monto,
+      fecha: new Date().toLocaleDateString(),
+      abonos: [],
+    });
+    DB.set('fiados', fiados);
+    f.reset();
+    renderFiados();
+  }
+
+  function saldoDe(fi) {
+    return fi.monto - fi.abonos.reduce((a, b) => a + b.monto, 0);
+  }
+
+  function abonar(id) {                              // registrar abono (US8)
+    const fiados = DB.get('fiados');
+    const fi = fiados.find(x => x.id === id);
+    if (!fi) return;
+    const saldo = saldoDe(fi);
+    const m = parseFloat(prompt(`Saldo de ${fi.clienta}: ${fmt(saldo)}\n¿Cuánto abona?`, ''));
+    if (!m || m <= 0) return;
+    if (m > saldo) { alert('El abono no puede ser mayor al saldo.'); return; }
+    fi.abonos.push({ monto: m, fecha: new Date().toLocaleDateString() });
+    DB.set('fiados', fiados);
+    renderFiados();
+  }
+
+  function renderFiados() {
+    const q = (document.getElementById('buscarFiado').value || '').toLowerCase();
+    const fiados = DB.get('fiados').filter(f => f.clienta.toLowerCase().includes(q));
+    const cont = document.getElementById('listaFiados');
+    const total = fiados.reduce((a, f) => a + saldoDe(f), 0);   // total por cobrar (US7)
+    document.getElementById('totalPorCobrar').textContent = fmt(total);
+    if (fiados.length === 0) {
+      cont.innerHTML = '<p class="vacio">Sin fiados.</p>';
+      return;
+    }
+    cont.innerHTML = fiados.map(f => {
+      const saldo = saldoDe(f);
+      const pagado = saldo <= 0;                       // se marca pagado (US8)
+      return `<div class="card ${pagado ? 'pagado' : ''}">
+        <div class="card-top">
+          <strong>${f.clienta}</strong>
+          <span class="pill ${pagado ? 'pill-verde' : 'pill-rojo'}">${pagado ? 'PAGADO' : fmt(saldo)}</span>
+        </div>
+        <div class="muted">${f.descripcion || '—'} · ${f.fecha} · debía ${fmt(f.monto)}</div>
+        ${pagado ? '' : `<button class="mini" onclick="abonar('${f.id}')">Registrar abono</button>`}
+      </div>`;
+    }).join('');
+  }
+
+  /* ===== Resumen (US9) ===== */
+  function renderResumen() {
+    const productos = DB.get('productos');
+    const fiados = DB.get('fiados');
+    const porCobrar = fiados.reduce((a, f) => a + saldoDe(f), 0);
+    const bajoStock = productos.filter(p => p.stock <= p.stockMinimo).length;
+    const valorInv = productos.reduce((a, p) => a + p.stock * p.costo, 0);
+    document.getElementById('rPorCobrar').textContent = fmt(porCobrar);
+    document.getElementById('rBajoStock').textContent = bajoStock;
+    document.getElementById('rValorInv').textContent = fmt(valorInv);
+    document.getElementById('rProductos').textContent = productos.length;
+  }
+
+  /* ===== Inicio ===== */
+  document.addEventListener('DOMContentLoaded', () => {
+    if (sesion) document.getElementById('saludo').textContent = `Hola, ${sesion.nombre} · YCC Beauty Studio`;
+    document.getElementById('formProducto').addEventListener('submit', addProducto);
+    document.getElementById('formFiado').addEventListener('submit', addFiado);
+    document.getElementById('buscarProd').addEventListener('input', renderProductos);
+    document.getElementById('buscarFiado').addEventListener('input', renderFiados);
+    renderProductos();
+    renderFiados();
+  });
+
+  /* PWA: registra el service worker solo cuando se sirve por http(s) */
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+  </script>
+</body>
+</html>

@@ -25,7 +25,9 @@ Fuera de la v1: agenda de citas (ya usa otra app), reportes de margen por caja y
 
 ## Cómo probarlo
 
-Abrí `index.html` en el navegador del celular o la computadora (doble clic). Los datos se guardan en el mismo dispositivo (localStorage).
+Abrí `index.html` en el navegador del celular o la computadora (doble clic): esa es la landing. Desde ahí, **Iniciar sesión** te lleva al login y, tras entrar, a la app.
+
+Cuenta de demostración: usuario `yaleni`, contraseña `ycc2026`. Los datos se guardan en el mismo dispositivo (localStorage).
 
 Para que funcione como PWA instalable y offline, servílo con cualquier servidor estático:
 
@@ -37,6 +39,8 @@ npx serve .
 
 | Archivo | Qué es |
 |---|---|
-| `index.html` | La aplicación completa (HTML, CSS y JavaScript en un solo archivo autónomo) |
+| `index.html` | Landing page: qué resuelve la app y acceso al login |
+| `login.html` | Pantalla de acceso (cuenta de demostración; en producción, Supabase Auth) |
+| `app.html` | La aplicación completa (HTML, CSS y JavaScript en un solo archivo autónomo) |
 | `manifest.json`, `sw.js`, `icon.svg` | Soporte PWA (instalable, offline) |
 | `PLAN.md` | Plan y diseño completo: problema, backlog, arquitectura, calidad, despliegue y validación |

@@ -4,369 +4,337 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#b5179e">
-  <link rel="manifest" href="manifest.json">
-  <title>Cuenta Clara</title>
+  <meta name="description" content="Cuenta Clara: lleva el inventario y los fiados de tu salon de belleza sin cuaderno. Sabe que hay en stock, quien te debe y cuanto.">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <title>Cuenta Clara — Inventario y fiados para tu salón</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    :root {
+      --magenta: #b5179e;
+      --morado: #7209b7;
+      --fondo: #faf6f8;
+      --texto: #2b2b2b;
+      --suave: #6b6470;
+      --borde: #efe4ec;
+    }
+
+    html { scroll-behavior: smooth; }
+
     body {
       font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background: #faf6f8;
-      color: #2b2b2b;
-      padding-bottom: 70px;
+      background: var(--fondo);
+      color: var(--texto);
+      line-height: 1.55;
     }
 
-    header {
-      background: linear-gradient(135deg, #b5179e, #7209b7);
+    .contenedor { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+
+    /* ===== Barra superior ===== */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(250, 246, 248, .92);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid var(--borde);
+    }
+    .nav .contenedor {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      height: 62px;
+    }
+    .marca { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+    .marca img { width: 32px; height: 32px; border-radius: 9px; }
+
+    .btn {
+      display: inline-block;
+      background: var(--magenta);
       color: #fff;
-      padding: 18px 16px;
+      text-decoration: none;
+      padding: 11px 20px;
+      border-radius: 10px;
+      font-size: .95rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: opacity .15s;
     }
-    header h1 { font-size: 1.4rem; }
-    header p { opacity: .85; font-size: .85rem; }
+    .btn:hover { opacity: .88; }
+    .btn-fantasma {
+      background: transparent;
+      color: var(--morado);
+      border: 1px solid #dcc7d8;
+    }
+    .nav .btn { padding: 9px 16px; }
 
-    main { padding: 16px; max-width: 520px; margin: 0 auto; }
-
-    .tab { display: none; }
-    .tab.active { display: block; }
-
-    h2 { font-size: 1rem; margin-bottom: 10px; }
-
-    .form {
-      background: #fff;
-      border-radius: 14px;
-      padding: 14px;
-      box-shadow: 0 1px 4px rgba(0,0,0,.08);
+    /* ===== Portada ===== */
+    .portada { padding: 56px 0 40px; }
+    .portada .contenedor {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 40px;
+      align-items: center;
+    }
+    .etiqueta {
+      display: inline-block;
+      background: #f4e4f0;
+      color: var(--morado);
+      font-size: .78rem;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 20px;
+      margin-bottom: 16px;
+    }
+    .portada h1 {
+      font-size: 2.2rem;
+      line-height: 1.15;
+      letter-spacing: -.02em;
       margin-bottom: 14px;
     }
-    .form input {
-      width: 100%;
-      padding: 10px;
-      margin-bottom: 8px;
-      border: 1px solid #e3d7dd;
-      border-radius: 10px;
-      font-size: .95rem;
+    .portada h1 em {
+      font-style: normal;
+      background: linear-gradient(135deg, var(--magenta), var(--morado));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
     }
-    .row { display: flex; gap: 8px; }
-    .row input { flex: 1; }
+    .portada p.bajada { color: var(--suave); font-size: 1.05rem; margin-bottom: 26px; }
+    .acciones { display: flex; flex-wrap: wrap; gap: 12px; }
+    .nota-acceso { font-size: .82rem; color: var(--suave); margin-top: 14px; }
 
-    button {
-      background: #b5179e;
+    /* ===== Maqueta del telefono ===== */
+    .telefono {
+      width: 260px;
+      margin: 0 auto;
+      background: #fff;
+      border: 8px solid #2b2b2b;
+      border-radius: 30px;
+      overflow: hidden;
+      box-shadow: 0 18px 40px rgba(114, 9, 183, .18);
+    }
+    .tel-header {
+      background: linear-gradient(135deg, var(--magenta), var(--morado));
       color: #fff;
-      border: none;
-      padding: 11px;
-      border-radius: 10px;
-      font-size: .95rem;
-      width: 100%;
-      cursor: pointer;
+      padding: 14px;
     }
-    button:active { opacity: .85; }
-
-    .buscar {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #e3d7dd;
-      border-radius: 10px;
-      margin-bottom: 10px;
-    }
-
-    .lista { display: flex; flex-direction: column; gap: 8px; }
-
-    .card {
+    .tel-header strong { font-size: .95rem; display: block; }
+    .tel-header span { font-size: .72rem; opacity: .85; }
+    .tel-cuerpo { padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--fondo); }
+    .tel-card {
       background: #fff;
-      border-radius: 12px;
-      padding: 12px;
-      box-shadow: 0 1px 3px rgba(0,0,0,.06);
-      border-left: 4px solid #b5179e;
+      border-radius: 10px;
+      padding: 9px 11px;
+      border-left: 3px solid var(--magenta);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
+      font-size: .76rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
     }
-    .card.bajo { border-left-color: #e63946; background: #fff5f5; }
-    .card.pagado { opacity: .6; border-left-color: #2a9d8f; }
-    .card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+    .tel-card.alerta { border-left-color: #e63946; background: #fff5f5; }
+    .tel-card small { color: var(--suave); display: block; font-size: .7rem; }
+    .tel-pill { background: #f0e6ee; border-radius: 20px; padding: 2px 8px; font-size: .68rem; white-space: nowrap; }
+    .tel-pill.rojo { background: #ffd6d6; color: #c1121f; }
+    .tel-tabs { display: flex; border-top: 1px solid #eee; background: #fff; }
+    .tel-tabs span { flex: 1; text-align: center; padding: 9px 2px; font-size: .68rem; color: #999; }
+    .tel-tabs span.on { color: var(--magenta); font-weight: 600; border-top: 2px solid var(--magenta); }
 
-    .muted { color: #777; font-size: .82rem; }
+    /* ===== Secciones ===== */
+    section.bloque { padding: 44px 0; }
+    .bloque h2 { font-size: 1.45rem; letter-spacing: -.01em; margin-bottom: 8px; }
+    .bloque .intro { color: var(--suave); margin-bottom: 26px; max-width: 620px; }
 
-    .pill { background: #f0e6ee; padding: 2px 8px; border-radius: 20px; font-size: .78rem; }
-    .pill-rojo { background: #ffd6d6; color: #c1121f; }
-    .pill-verde { background: #d6f5ef; color: #1b7a6b; }
-
-    .mini {
-      width: auto;
-      padding: 6px 12px;
-      font-size: .8rem;
-      margin-top: 8px;
-      background: #7209b7;
-    }
-
-    .vacio { color: #999; text-align: center; padding: 20px; }
-
-    .resumen-mini {
+    .cita {
       background: #fff;
-      border-radius: 12px;
-      padding: 10px 14px;
-      margin-bottom: 12px;
-      text-align: center;
-      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+      border-left: 4px solid var(--magenta);
+      border-radius: 0 14px 14px 0;
+      padding: 18px 20px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, .06);
+      font-size: 1.02rem;
     }
+    .cita footer { color: var(--suave); font-size: .82rem; margin-top: 8px; }
 
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .stat {
+    .tarjetas { display: grid; grid-template-columns: 1fr; gap: 16px; }
+    .tarjeta {
       background: #fff;
       border-radius: 14px;
-      padding: 18px;
-      text-align: center;
-      box-shadow: 0 1px 3px rgba(0,0,0,.06);
+      padding: 22px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, .06);
+      border: 1px solid var(--borde);
     }
-    .stat span { font-size: 1.5rem; font-weight: 700; color: #7209b7; display: block; }
-    .stat label { font-size: .8rem; color: #777; }
+    .tarjeta .icono {
+      width: 40px; height: 40px;
+      display: grid; place-items: center;
+      border-radius: 11px;
+      background: #f4e4f0;
+      font-size: 1.2rem;
+      margin-bottom: 12px;
+    }
+    .tarjeta h3 { font-size: 1rem; margin-bottom: 6px; }
+    .tarjeta p { color: var(--suave); font-size: .92rem; }
 
-    .tabbar {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      display: flex;
-      background: #fff;
-      border-top: 1px solid #eee;
+    .cliente {
+      background: linear-gradient(135deg, var(--magenta), var(--morado));
+      color: #fff;
+      border-radius: 18px;
+      padding: 30px 26px;
     }
-    .tabbtn {
-      flex: 1;
-      background: none;
-      color: #888;
-      border: none;
-      padding: 12px 4px;
-      font-size: .8rem;
-      border-radius: 0;
+    .cliente h2 { color: #fff; }
+    .cliente p { opacity: .9; max-width: 560px; }
+
+    /* ===== Llamado final ===== */
+    .final { text-align: center; padding: 52px 0 60px; }
+    .final h2 { font-size: 1.5rem; margin-bottom: 10px; }
+    .final p { color: var(--suave); margin-bottom: 22px; }
+
+    footer.pie {
+      border-top: 1px solid var(--borde);
+      padding: 22px 0;
+      color: var(--suave);
+      font-size: .85rem;
+      text-align: center;
     }
-    .tabbtn.active { color: #b5179e; font-weight: 600; border-top: 2px solid #b5179e; }
+    footer.pie a { color: var(--morado); }
+
+    @media (min-width: 820px) {
+      .portada { padding: 76px 0 56px; }
+      .portada .contenedor { grid-template-columns: 1.1fr .9fr; gap: 48px; }
+      .portada h1 { font-size: 2.9rem; }
+      .tarjetas { grid-template-columns: repeat(3, 1fr); }
+      .bloque h2 { font-size: 1.7rem; }
+    }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Cuenta Clara</h1>
-    <p>YCC Beauty Studio</p>
-  </header>
 
-  <main>
-    <!-- ===== Inventario ===== -->
-    <section id="inventario" class="tab active">
-      <form id="formProducto" class="form">
-        <h2>Agregar producto</h2>
-        <input name="nombre" placeholder="Nombre del producto" required>
-        <div class="row">
-          <input name="costo" type="number" step="0.01" placeholder="Costo (L)">
-          <input name="precio" type="number" step="0.01" placeholder="Precio (L)" required>
-        </div>
-        <div class="row">
-          <input name="stock" type="number" placeholder="Stock">
-          <input name="stockMinimo" type="number" placeholder="Mínimo">
-        </div>
-        <button type="submit">Guardar producto</button>
-      </form>
-      <input id="buscarProd" class="buscar" placeholder="Buscar producto...">
-      <div id="listaProductos" class="lista"></div>
-    </section>
-
-    <!-- ===== Fiados ===== -->
-    <section id="fiados" class="tab">
-      <div class="resumen-mini">Total por cobrar: <strong id="totalPorCobrar">L 0.00</strong></div>
-      <form id="formFiado" class="form">
-        <h2>Nuevo fiado</h2>
-        <input name="clienta" placeholder="Nombre de la clienta" required>
-        <input name="descripcion" placeholder="¿Qué llevó? (opcional)">
-        <input name="monto" type="number" step="0.01" placeholder="Monto (L)" required>
-        <button type="submit">Guardar fiado</button>
-      </form>
-      <input id="buscarFiado" class="buscar" placeholder="Buscar por nombre...">
-      <div id="listaFiados" class="lista"></div>
-    </section>
-
-    <!-- ===== Resumen ===== -->
-    <section id="resumen" class="tab">
-      <h2>Resumen</h2>
-      <div class="grid">
-        <div class="stat"><span id="rPorCobrar">L 0.00</span><label>Por cobrar</label></div>
-        <div class="stat"><span id="rBajoStock">0</span><label>Bajo stock</label></div>
-        <div class="stat"><span id="rValorInv">L 0.00</span><label>Valor inventario</label></div>
-        <div class="stat"><span id="rProductos">0</span><label>Productos</label></div>
+  <nav class="nav">
+    <div class="contenedor">
+      <div class="marca">
+        <img src="icon.svg" alt="">
+        Cuenta Clara
       </div>
-    </section>
-  </main>
-
-  <nav class="tabbar">
-    <button class="tabbtn active" data-tab="inventario" onclick="showTab('inventario')">Inventario</button>
-    <button class="tabbtn" data-tab="fiados" onclick="showTab('fiados')">Fiados</button>
-    <button class="tabbtn" data-tab="resumen" onclick="showTab('resumen')">Resumen</button>
+      <a class="btn" href="login.html">Iniciar sesión</a>
+    </div>
   </nav>
 
-  <script>
-  /* Cuenta Clara — prototipo (un solo archivo).
-     Datos guardados en localStorage del dispositivo (para la demostración).
-     En producción esto se reemplaza por Supabase (ver PLAN.md). */
-
-  const DB = {
-    get(k) { return JSON.parse(localStorage.getItem(k) || '[]'); },
-    set(k, v) { localStorage.setItem(k, JSON.stringify(v)); },
-  };
-
-  const fmt = n => 'L ' + Number(n).toFixed(2);            // lempiras con 2 decimales
-  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-
-  /* ===== Navegación por pestañas ===== */
-  function showTab(id) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tabbtn').forEach(b => b.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    document.querySelector(`[data-tab="${id}"]`).classList.add('active');
-    if (id === 'resumen') renderResumen();
-  }
-
-  /* ===== Inventario (US1, US2, US3) ===== */
-  function addProducto(e) {
-    e.preventDefault();
-    const f = e.target;
-    const nombre = f.nombre.value.trim();
-    const precio = parseFloat(f.precio.value);
-    if (!nombre || isNaN(precio)) {            // validación (US1)
-      alert('Falta el nombre o el precio.');
-      return;
-    }
-    const productos = DB.get('productos');
-    productos.push({
-      id: uid(),
-      nombre,
-      costo: parseFloat(f.costo.value) || 0,
-      precio,
-      stock: parseInt(f.stock.value) || 0,
-      stockMinimo: parseInt(f.stockMinimo.value) || 0,
-    });
-    DB.set('productos', productos);
-    f.reset();
-    renderProductos();
-  }
-
-  function venderProducto(id) {
-    const productos = DB.get('productos');
-    const p = productos.find(x => x.id === id);
-    if (!p) return;
-    const cant = parseInt(prompt(`¿Cuántas unidades de "${p.nombre}" vendiste?`, '1'));
-    if (!cant || cant <= 0) return;
-    if (cant > p.stock) { alert('No hay suficiente stock.'); return; }
-    p.stock -= cant;                            // descuenta del stock (US2)
-    DB.set('productos', productos);
-    renderProductos();
-  }
-
-  function renderProductos() {
-    const q = (document.getElementById('buscarProd').value || '').toLowerCase();
-    const productos = DB.get('productos').filter(p => p.nombre.toLowerCase().includes(q));
-    const cont = document.getElementById('listaProductos');
-    if (productos.length === 0) {
-      cont.innerHTML = '<p class="vacio">Sin productos todavía.</p>';
-      return;
-    }
-    cont.innerHTML = productos.map(p => {
-      const bajo = p.stock <= p.stockMinimo;     // alerta de bajo stock (US3)
-      const margen = p.precio - p.costo;
-      return `<div class="card ${bajo ? 'bajo' : ''}">
-        <div class="card-top">
-          <strong>${p.nombre}</strong>
-          <span class="pill ${bajo ? 'pill-rojo' : ''}">stock: ${p.stock}${bajo ? ' !' : ''}</span>
+  <header class="portada">
+    <div class="contenedor">
+      <div>
+        <span class="etiqueta">YCC Beauty Studio · Choloma, Cortés</span>
+        <h1>Tu inventario y tus fiados, <em>sin cuaderno</em>.</h1>
+        <p class="bajada">
+          Sabé al instante qué te queda en stock, quién te debe cuánto y si cada
+          caja que traés deja ganancia. Todo desde el celular, en lempiras.
+        </p>
+        <div class="acciones">
+          <a class="btn" href="login.html">Entrar a la app</a>
+          <a class="btn btn-fantasma" href="#funciones">Ver qué hace</a>
         </div>
-        <div class="muted">Precio ${fmt(p.precio)} · Costo ${fmt(p.costo)} · Margen ${fmt(margen)}</div>
-        <button class="mini" onclick="venderProducto('${p.id}')">Vender</button>
-      </div>`;
-    }).join('');
-  }
+        <p class="nota-acceso">Prototipo del capstone de Ingeniería de Software I. Los datos se guardan en tu propio dispositivo.</p>
+      </div>
 
-  /* ===== Fiados (US6, US7, US8) ===== */
-  function addFiado(e) {
-    e.preventDefault();
-    const f = e.target;
-    const clienta = f.clienta.value.trim();
-    const monto = parseFloat(f.monto.value);
-    if (!clienta || isNaN(monto) || monto <= 0) {   // validación (US6)
-      alert('Falta la clienta o un monto válido.');
-      return;
-    }
-    const fiados = DB.get('fiados');
-    fiados.push({
-      id: uid(),
-      clienta,
-      descripcion: f.descripcion.value.trim(),
-      monto,
-      fecha: new Date().toLocaleDateString(),
-      abonos: [],
-    });
-    DB.set('fiados', fiados);
-    f.reset();
-    renderFiados();
-  }
-
-  function saldoDe(fi) {
-    return fi.monto - fi.abonos.reduce((a, b) => a + b.monto, 0);
-  }
-
-  function abonar(id) {                              // registrar abono (US8)
-    const fiados = DB.get('fiados');
-    const fi = fiados.find(x => x.id === id);
-    if (!fi) return;
-    const saldo = saldoDe(fi);
-    const m = parseFloat(prompt(`Saldo de ${fi.clienta}: ${fmt(saldo)}\n¿Cuánto abona?`, ''));
-    if (!m || m <= 0) return;
-    if (m > saldo) { alert('El abono no puede ser mayor al saldo.'); return; }
-    fi.abonos.push({ monto: m, fecha: new Date().toLocaleDateString() });
-    DB.set('fiados', fiados);
-    renderFiados();
-  }
-
-  function renderFiados() {
-    const q = (document.getElementById('buscarFiado').value || '').toLowerCase();
-    const fiados = DB.get('fiados').filter(f => f.clienta.toLowerCase().includes(q));
-    const cont = document.getElementById('listaFiados');
-    const total = fiados.reduce((a, f) => a + saldoDe(f), 0);   // total por cobrar (US7)
-    document.getElementById('totalPorCobrar').textContent = fmt(total);
-    if (fiados.length === 0) {
-      cont.innerHTML = '<p class="vacio">Sin fiados.</p>';
-      return;
-    }
-    cont.innerHTML = fiados.map(f => {
-      const saldo = saldoDe(f);
-      const pagado = saldo <= 0;                       // se marca pagado (US8)
-      return `<div class="card ${pagado ? 'pagado' : ''}">
-        <div class="card-top">
-          <strong>${f.clienta}</strong>
-          <span class="pill ${pagado ? 'pill-verde' : 'pill-rojo'}">${pagado ? 'PAGADO' : fmt(saldo)}</span>
+      <div class="telefono" aria-hidden="true">
+        <div class="tel-header">
+          <strong>Cuenta Clara</strong>
+          <span>YCC Beauty Studio</span>
         </div>
-        <div class="muted">${f.descripcion || '—'} · ${f.fecha} · debía ${fmt(f.monto)}</div>
-        ${pagado ? '' : `<button class="mini" onclick="abonar('${f.id}')">Registrar abono</button>`}
-      </div>`;
-    }).join('');
-  }
+        <div class="tel-cuerpo">
+          <div class="tel-card">
+            <div><strong>Tinte rubio ceniza</strong><small>Costo L 180 · Precio L 320</small></div>
+            <span class="tel-pill">6 en stock</span>
+          </div>
+          <div class="tel-card alerta">
+            <div><strong>Shampoo matizador</strong><small>Costo L 210 · Precio L 380</small></div>
+            <span class="tel-pill rojo">1 · bajo</span>
+          </div>
+          <div class="tel-card">
+            <div><strong>Keratina 500 ml</strong><small>Costo L 340 · Precio L 590</small></div>
+            <span class="tel-pill">4 en stock</span>
+          </div>
+          <div class="tel-card">
+            <div><strong>Karla M.</strong><small>Fiado del 12 de junio</small></div>
+            <span class="tel-pill rojo">L 450.00</span>
+          </div>
+        </div>
+        <div class="tel-tabs">
+          <span class="on">Inventario</span>
+          <span>Fiados</span>
+          <span>Resumen</span>
+        </div>
+      </div>
+    </div>
+  </header>
 
-  /* ===== Resumen (US9) ===== */
-  function renderResumen() {
-    const productos = DB.get('productos');
-    const fiados = DB.get('fiados');
-    const porCobrar = fiados.reduce((a, f) => a + saldoDe(f), 0);
-    const bajoStock = productos.filter(p => p.stock <= p.stockMinimo).length;
-    const valorInv = productos.reduce((a, p) => a + p.stock * p.costo, 0);
-    document.getElementById('rPorCobrar').textContent = fmt(porCobrar);
-    document.getElementById('rBajoStock').textContent = bajoStock;
-    document.getElementById('rValorInv').textContent = fmt(valorInv);
-    document.getElementById('rProductos').textContent = productos.length;
-  }
+  <section class="bloque">
+    <div class="contenedor">
+      <h2>El problema</h2>
+      <p class="intro">
+        Hoy todo vive en un cuaderno: solo el nombre y la cantidad de cada fiado.
+        No se puede buscar quién debe, no se suman los totales y no hay forma de
+        saber si una caja importada dejó ganancia.
+      </p>
+      <blockquote class="cita">
+        “Imaginate que no es un negocio grande, y solo le fío a pocas personas.”
+        <footer>— Yaleni, dueña de YCC Beauty Studio (entrevista, 6 de junio de 2026)</footer>
+      </blockquote>
+    </div>
+  </section>
 
-  /* ===== Inicio ===== */
-  document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('formProducto').addEventListener('submit', addProducto);
-    document.getElementById('formFiado').addEventListener('submit', addFiado);
-    document.getElementById('buscarProd').addEventListener('input', renderProductos);
-    document.getElementById('buscarFiado').addEventListener('input', renderFiados);
-    renderProductos();
-    renderFiados();
-  });
+  <section class="bloque" id="funciones">
+    <div class="contenedor">
+      <h2>Qué hace</h2>
+      <p class="intro">Tres pantallas, nada más. Lo mínimo para dejar el cuaderno.</p>
+      <div class="tarjetas">
+        <article class="tarjeta">
+          <div class="icono">📦</div>
+          <h3>Inventario</h3>
+          <p>Registrá cada producto con su costo y su precio para ver el margen. Buscá por nombre, descontá lo que vendés y recibí alerta cuando algo esté por agotarse.</p>
+        </article>
+        <article class="tarjeta">
+          <div class="icono">🧾</div>
+          <h3>Fiados</h3>
+          <p>Anotá quién llevó qué y por cuánto. Buscá a la clienta por nombre, registrá sus abonos y mirá el saldo que aún te debe.</p>
+        </article>
+        <article class="tarjeta">
+          <div class="icono">📊</div>
+          <h3>Resumen</h3>
+          <p>El total por cobrar, cuántos productos están bajo stock y el valor de todo tu inventario, en una sola pantalla.</p>
+        </article>
+      </div>
+    </div>
+  </section>
 
-  /* PWA: registra el service worker solo cuando se sirve por http(s) */
-  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
-  }
-  </script>
+  <section class="bloque">
+    <div class="contenedor">
+      <div class="cliente">
+        <h2>Hecha para un salón real</h2>
+        <p>
+          Cuenta Clara se diseñó con Yaleni, que atiende sola su salón en Choloma:
+          vende, fía y anota todo mientras trabaja. Por eso la app es primero móvil,
+          funciona sin internet y no pide más de tres datos para guardar algo.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="final">
+    <div class="contenedor">
+      <h2>Empezá a llevar la cuenta clara</h2>
+      <p>Entrá con tu usuario y registrá tu primer producto en menos de un minuto.</p>
+      <a class="btn" href="login.html">Iniciar sesión</a>
+    </div>
+  </section>
+
+  <footer class="pie">
+    <div class="contenedor">
+      Cuenta Clara · Capstone de Ingeniería de Software I ·
+      <a href="PLAN.md">Plan y diseño</a>
+    </div>
+  </footer>
+
 </body>
 </html>
