@@ -20,7 +20,7 @@ Fuera de la v1: agenda de citas (ya usa otra app), reportes de margen por caja y
 
 ## Tecnologías
 
-- **Prototipo (este repo):** PWA en un solo archivo HTML con CSS y JavaScript adentro; datos en `localStorage` (funciona sin backend para la demostración).
+- **Prototipo (este repo):** PWA en HTML, CSS y JavaScript sin dependencias ni compilación; datos en `localStorage` (funciona sin backend para la demostración).
 - **Producción (planeada):** Supabase (PostgreSQL + Auth + respaldos) y hosting en Vercel. Ver la arquitectura en [PLAN.md](PLAN.md).
 
 ## Cómo probarlo
@@ -41,6 +41,10 @@ npx serve .
 |---|---|
 | `index.html` | Landing page: qué resuelve la app y acceso al login |
 | `login.html` | Pantalla de acceso (cuenta de demostración; en producción, Supabase Auth) |
-| `app.html` | La aplicación completa (HTML, CSS y JavaScript en un solo archivo autónomo) |
+| `app.html` | La aplicación: inventario, fiados y resumen |
+| `css/base.css` | Reset, colores de la marca y botón, compartidos por las tres páginas |
+| `css/landing.css`, `css/login.css`, `css/app.css` | Estilos propios de cada página |
+| `js/sesion.js` | Abrir, leer y cerrar sesión; lo usan el login y la app |
+| `js/login.js`, `js/app.js` | Lógica de cada página |
 | `manifest.json`, `sw.js`, `icon.svg` | Soporte PWA (instalable, offline) |
 | `PLAN.md` | Plan y diseño completo: problema, backlog, arquitectura, calidad, despliegue y validación |

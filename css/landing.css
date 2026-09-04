@@ -1,0 +1,171 @@
+/* Landing page (index.html). Los colores y el reset estan en base.css. */
+
+html { scroll-behavior: smooth; }
+
+body { line-height: 1.55; }
+
+.contenedor { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
+
+/* ===== Barra superior ===== */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(250, 246, 248, .92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--borde);
+}
+.nav .contenedor {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 62px;
+}
+.marca { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+.marca img { width: 32px; height: 32px; border-radius: 9px; }
+
+.btn-fantasma {
+  background: transparent;
+  color: var(--morado);
+  border: 1px solid #dcc7d8;
+}
+.nav .btn { padding: 9px 16px; }
+
+/* ===== Portada ===== */
+.portada { padding: 56px 0 40px; }
+.portada .contenedor {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 40px;
+  align-items: center;
+}
+.etiqueta {
+  display: inline-block;
+  background: #f4e4f0;
+  color: var(--morado);
+  font-size: .78rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 20px;
+  margin-bottom: 16px;
+}
+.portada h1 {
+  font-size: 2.2rem;
+  line-height: 1.15;
+  letter-spacing: -.02em;
+  margin-bottom: 14px;
+}
+.portada h1 em {
+  font-style: normal;
+  background: linear-gradient(135deg, var(--magenta), var(--morado));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.portada p.bajada { color: var(--suave); font-size: 1.05rem; margin-bottom: 26px; }
+.acciones { display: flex; flex-wrap: wrap; gap: 12px; }
+.nota-acceso { font-size: .82rem; color: var(--suave); margin-top: 14px; }
+
+/* ===== Maqueta del telefono ===== */
+.telefono {
+  width: 260px;
+  margin: 0 auto;
+  background: #fff;
+  border: 8px solid #2b2b2b;
+  border-radius: 30px;
+  overflow: hidden;
+  box-shadow: 0 18px 40px rgba(114, 9, 183, .18);
+}
+.tel-header {
+  background: linear-gradient(135deg, var(--magenta), var(--morado));
+  color: #fff;
+  padding: 14px;
+}
+.tel-header strong { font-size: .95rem; display: block; }
+.tel-header span { font-size: .72rem; opacity: .85; }
+.tel-cuerpo { padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--fondo); }
+.tel-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 9px 11px;
+  border-left: 3px solid var(--magenta);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
+  font-size: .76rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.tel-card.alerta { border-left-color: #e63946; background: #fff5f5; }
+.tel-card small { color: var(--suave); display: block; font-size: .7rem; }
+.tel-pill { background: #f0e6ee; border-radius: 20px; padding: 2px 8px; font-size: .68rem; white-space: nowrap; }
+.tel-pill.rojo { background: #ffd6d6; color: #c1121f; }
+.tel-tabs { display: flex; border-top: 1px solid #eee; background: #fff; }
+.tel-tabs span { flex: 1; text-align: center; padding: 9px 2px; font-size: .68rem; color: #999; }
+.tel-tabs span.on { color: var(--magenta); font-weight: 600; border-top: 2px solid var(--magenta); }
+
+/* ===== Secciones ===== */
+section.bloque { padding: 44px 0; }
+.bloque h2 { font-size: 1.45rem; letter-spacing: -.01em; margin-bottom: 8px; }
+.bloque .intro { color: var(--suave); margin-bottom: 26px; max-width: 620px; }
+
+.cita {
+  background: #fff;
+  border-left: 4px solid var(--magenta);
+  border-radius: 0 14px 14px 0;
+  padding: 18px 20px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .06);
+  font-size: 1.02rem;
+}
+.cita footer { color: var(--suave); font-size: .82rem; margin-top: 8px; }
+
+.tarjetas { display: grid; grid-template-columns: 1fr; gap: 16px; }
+.tarjeta {
+  background: #fff;
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, .06);
+  border: 1px solid var(--borde);
+}
+.tarjeta .icono {
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  border-radius: 11px;
+  background: #f4e4f0;
+  font-size: 1.2rem;
+  margin-bottom: 12px;
+}
+.tarjeta h3 { font-size: 1rem; margin-bottom: 6px; }
+.tarjeta p { color: var(--suave); font-size: .92rem; }
+
+.cliente {
+  background: linear-gradient(135deg, var(--magenta), var(--morado));
+  color: #fff;
+  border-radius: 18px;
+  padding: 30px 26px;
+}
+.cliente h2 { color: #fff; }
+.cliente p { opacity: .9; max-width: 560px; }
+
+/* ===== Llamado final ===== */
+.final { text-align: center; padding: 52px 0 60px; }
+.final h2 { font-size: 1.5rem; margin-bottom: 10px; }
+.final p { color: var(--suave); margin-bottom: 22px; }
+
+footer.pie {
+  border-top: 1px solid var(--borde);
+  padding: 22px 0;
+  color: var(--suave);
+  font-size: .85rem;
+  text-align: center;
+}
+footer.pie a { color: var(--morado); }
+
+@media (min-width: 820px) {
+  .portada { padding: 76px 0 56px; }
+  .portada .contenedor { grid-template-columns: 1.1fr .9fr; gap: 48px; }
+  .portada h1 { font-size: 2.9rem; }
+  .tarjetas { grid-template-columns: repeat(3, 1fr); }
+  .bloque h2 { font-size: 1.7rem; }
+}

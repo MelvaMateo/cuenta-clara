@@ -1,0 +1,132 @@
+/* Aplicacion (app.html). El reset y los colores estan en base.css. */
+
+body { padding-bottom: 70px; }
+
+header {
+  background: linear-gradient(135deg, var(--magenta), var(--morado));
+  color: var(--blanco);
+  padding: 18px 16px;
+}
+header h1 { font-size: 1.4rem; }
+header p { opacity: .85; font-size: .85rem; }
+.header-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.salir {
+  width: auto;
+  background: rgba(255,255,255,.16);
+  border: 1px solid rgba(255,255,255,.45);
+  padding: 6px 12px;
+  font-size: .8rem;
+  flex-shrink: 0;
+}
+
+main { padding: 16px; max-width: 520px; margin: 0 auto; }
+
+.tab { display: none; }
+.tab.active { display: block; }
+
+h2 { font-size: 1rem; margin-bottom: 10px; }
+
+.form {
+  background: var(--blanco);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  margin-bottom: 14px;
+}
+.form input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 8px;
+  border: 1px solid var(--borde-campo);
+  border-radius: 10px;
+  font-size: .95rem;
+}
+.row { display: flex; gap: 8px; }
+.row input { flex: 1; }
+
+button {
+  background: var(--magenta);
+  color: var(--blanco);
+  border: none;
+  padding: 11px;
+  border-radius: 10px;
+  font-size: .95rem;
+  width: 100%;
+  cursor: pointer;
+}
+button:active { opacity: .85; }
+
+.buscar {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--borde-campo);
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.lista { display: flex; flex-direction: column; gap: 8px; }
+
+.card {
+  background: var(--blanco);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  border-left: 4px solid var(--magenta);
+}
+.card.bajo { border-left-color: var(--alerta); background: #fff5f5; }
+.card.pagado { opacity: .6; border-left-color: #2a9d8f; }
+.card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+
+.muted { color: #777; font-size: .82rem; }
+
+.pill { background: #f0e6ee; padding: 2px 8px; border-radius: 20px; font-size: .78rem; }
+.pill-rojo { background: var(--alerta-fondo); color: var(--alerta-texto); }
+.pill-verde { background: var(--ok-fondo); color: var(--ok-texto); }
+
+.mini {
+  width: auto;
+  padding: 6px 12px;
+  font-size: .8rem;
+  margin-top: 8px;
+  background: var(--morado);
+}
+
+.vacio { color: #999; text-align: center; padding: 20px; }
+
+.resumen-mini {
+  background: var(--blanco);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.stat {
+  background: var(--blanco);
+  border-radius: 14px;
+  padding: 18px;
+  text-align: center;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.stat span { font-size: 1.5rem; font-weight: 700; color: var(--morado); display: block; }
+.stat label { font-size: .8rem; color: #777; }
+
+.tabbar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  display: flex;
+  background: var(--blanco);
+  border-top: 1px solid #eee;
+}
+.tabbtn {
+  flex: 1;
+  background: none;
+  color: #888;
+  border: none;
+  padding: 12px 4px;
+  font-size: .8rem;
+  border-radius: 0;
+}
+.tabbtn.active { color: var(--magenta); font-weight: 600; border-top: 2px solid var(--magenta); }
