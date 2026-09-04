@@ -1,5 +1,9 @@
-/* Service worker mínimo: cachea la app para que cargue sin internet (PWA). */
-const CACHE = 'cuenta-clara-v3';
+/* Service worker: guarda una copia de la app para que abra sin internet (PWA).
+
+   Estrategia: primero la red y, solo si falla, la copia guardada. Antes era al
+   revés (primero la caché) y cada cambio en el HTML, el CSS o el JS quedaba
+   invisible hasta acordarse de subir a mano el número de versión de abajo. */
+const CACHE = 'cuenta-clara-v4';
 const ASSETS = [
   './',
   './index.html',
@@ -17,17 +21,33 @@ const ASSETS = [
 ];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+  /* skipWaiting: el service worker nuevo toma el control enseguida, sin
+     esperar a que se cierren todas las pestañas abiertas. */
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())
+  );
 });
 
-/* Borra las cachés de versiones anteriores; si no, seguiría sirviendo el HTML
-   viejo (con el CSS y el JS adentro) en lugar de estos archivos. */
 self.addEventListener('activate', e => {
   e.waitUntil(
-    caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k))))
+    caches.keys()
+      .then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
 });
 
 self.addEventListener('fetch', e => {
-  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+  if (e.request.method !== 'GET') return;
+
+  e.respondWith(
+    fetch(e.request)
+      .then(res => {
+        if (res.ok) {
+          const copia = res.clone();                  // guarda la última versión buena
+          caches.open(CACHE).then(c => c.put(e.request, copia));
+        }
+        return res;
+      })
+      .catch(() => caches.match(e.request))           // sin internet: la copia guardada
+  );
 });
