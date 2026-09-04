@@ -57,15 +57,5 @@ input:focus { outline: 2px solid var(--magenta); outline-offset: 1px; border-col
 }
 .error.visible { display: block; }
 
-.ayuda {
-  margin-top: 16px;
-  background: #f8f1f6;
-  border-radius: 10px;
-  padding: 10px 12px;
-  font-size: .8rem;
-  color: var(--suave);
-}
-.ayuda code { background: var(--blanco); padding: 1px 5px; border-radius: 5px; color: var(--morado); font-weight: 600; }
-
 .volver { margin-top: 18px; font-size: .85rem; }
 .volver a { color: var(--morado); }
