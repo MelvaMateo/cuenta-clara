@@ -1,31 +1,43 @@
-/* Sesión del prototipo, compartida por el login y la app.
-   Se guarda en el localStorage del dispositivo; en producción esto se
-   reemplaza por Supabase Auth (ver PLAN.md). */
+/* Sesión con Supabase Auth (Google), compartida por el login y la app.
 
-const SESION_KEY = 'sesion';
+   Antes la sesión era una llave en localStorage que el propio navegador se
+   escribía: se falsificaba desde la consola. Ahora la emite y la valida
+   Supabase, y el token se renueva solo. */
+
+/* `sb` es nuestro cliente; `window.supabase` es la librería del CDN. */
+const sb = CONFIG_LISTA
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
 
 const Sesion = {
-  actual() {
-    try {
-      return JSON.parse(localStorage.getItem(SESION_KEY) || 'null');
-    } catch (e) {
-      return null;                                  // dato corrupto: como si no hubiera sesión
-    }
+  async actual() {
+    if (!sb) return null;
+    const { data } = await sb.auth.getSession();
+    return data.session;
   },
-  abrir(usuario) {
-    localStorage.setItem(SESION_KEY, JSON.stringify({
-      ...usuario,
-      desde: new Date().toISOString(),
-    }));
+
+  /* Manda a Google y vuelve a app.html con la sesión ya abierta. */
+  async entrarConGoogle() {
+    return sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: new URL('app.html', location.href).href },
+    });
   },
-  cerrar() {
-    localStorage.removeItem(SESION_KEY);
+
+  async cerrar() {
+    if (sb) await sb.auth.signOut();
+  },
+
+  /* Google manda el nombre en user_metadata; si no viene, queda el correo. */
+  nombreDe(sesion) {
+    const meta = (sesion && sesion.user && sesion.user.user_metadata) || {};
+    return meta.full_name || meta.name || (sesion && sesion.user && sesion.user.email) || 'Usuaria';
   },
 };
 
 /* Solo se entra con sesión abierta; si no, se vuelve a la pantalla de acceso. */
-function exigirSesion() {
-  const sesion = Sesion.actual();
+async function exigirSesion() {
+  const sesion = await Sesion.actual();
   if (!sesion) location.replace('login.html');
   return sesion;
 }

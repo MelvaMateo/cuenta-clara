@@ -20,31 +20,36 @@ Fuera de la v1: agenda de citas (ya usa otra app), reportes de margen por caja y
 
 ## Tecnologías
 
-- **Prototipo (este repo):** PWA en HTML, CSS y JavaScript sin dependencias ni compilación; datos en `localStorage` (funciona sin backend para la demostración).
+- **Prototipo (este repo):** PWA en HTML, CSS y JavaScript sin compilación. El acceso ya usa **Supabase Auth con Google**; el inventario y los fiados siguen en `localStorage` mientras se migran a PostgreSQL.
 - **Producción (planeada):** Supabase (PostgreSQL + Auth + respaldos) y hosting en Vercel. Ver la arquitectura en [PLAN.md](PLAN.md).
+
+## Configuración
+
+El login necesita un proyecto de Supabase con el proveedor de Google activado. Copiá la URL del proyecto y la *anon key* (Supabase → Project Settings → API) en [js/config.js](js/config.js). Mientras queden los valores de ejemplo, el login lo avisa en pantalla en vez de fallar en silencio.
+
+La *anon key* es pública por diseño: viaja al navegador en cualquier app de Supabase, y lo que protege los datos son las políticas RLS. La `service_role key` nunca va en este repo.
 
 ## Cómo probarlo
 
-Abrí `index.html` en el navegador del celular o la computadora (doble clic): esa es la landing. Desde ahí, **Iniciar sesión** te lleva al login y, tras entrar, a la app.
-
-Cuenta de demostración: usuario `yaleni`, contraseña `ycc2026`. Los datos se guardan en el mismo dispositivo (localStorage).
-
-Para que funcione como PWA instalable y offline, servílo con cualquier servidor estático:
+⚠️ El login con Google **no funciona abriendo el archivo con doble clic** (`file://`): OAuth exige `http(s)`. Servílo con cualquier servidor estático:
 
 ```
 npx serve .
 ```
+
+Abrí la dirección que imprime: esa es la landing. Desde ahí, **Iniciar sesión** te lleva al login con Google y, tras entrar, a la app.
 
 ## Estructura
 
 | Archivo | Qué es |
 |---|---|
 | `index.html` | Landing page: qué resuelve la app y acceso al login |
-| `login.html` | Pantalla de acceso (cuenta de demostración; en producción, Supabase Auth) |
+| `login.html` | Pantalla de acceso con Google (Supabase Auth) |
 | `app.html` | La aplicación: inventario, fiados y resumen |
 | `css/base.css` | Reset, colores de la marca y botón, compartidos por las tres páginas |
 | `css/landing.css`, `css/login.css`, `css/app.css` | Estilos propios de cada página |
-| `js/sesion.js` | Abrir, leer y cerrar sesión; lo usan el login y la app |
+| `js/config.js` | URL y *anon key* del proyecto de Supabase |
+| `js/sesion.js` | Abrir, leer y cerrar sesión contra Supabase Auth; lo usan el login y la app |
 | `js/login.js`, `js/app.js` | Lógica de cada página |
 | `manifest.json`, `sw.js`, `icon.svg` | Soporte PWA (instalable, offline) |
 | `PLAN.md` | Plan y diseño completo: problema, backlog, arquitectura, calidad, despliegue y validación |

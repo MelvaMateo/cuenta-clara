@@ -1,4 +1,4 @@
-/* Pantalla de acceso (login.html). El reset, los colores y .btn están en base.css. */
+/* Pantalla de acceso (login.html). El reset y los colores están en base.css. */
 
 body {
   min-height: 100vh;
@@ -28,34 +28,46 @@ body {
   padding: 26px 22px;
   box-shadow: 0 4px 18px rgba(114, 9, 183, .10);
   border: 1px solid var(--borde);
+  text-align: center;
 }
 .caja h1 { font-size: 1.25rem; margin-bottom: 4px; }
-.caja > p.sub { color: var(--suave); font-size: .9rem; margin-bottom: 20px; }
-.caja .btn { width: 100%; padding: 12px; }
+.caja > p.sub { color: var(--suave); font-size: .9rem; margin-bottom: 22px; }
 
-label { display: block; font-size: .85rem; font-weight: 600; margin-bottom: 5px; }
-
-input {
+/* Botón de Google: fondo blanco y borde gris, como pide su guía de marca. */
+.btn-google {
   width: 100%;
-  padding: 11px;
-  margin-bottom: 14px;
-  border: 1px solid var(--borde-campo);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--blanco);
+  color: #3c4043;
+  border: 1px solid #dadce0;
   border-radius: 10px;
-  font-size: .95rem;
+  padding: 12px;
   font-family: inherit;
+  font-size: .95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, box-shadow .15s;
 }
-input:focus { outline: 2px solid var(--magenta); outline-offset: 1px; border-color: transparent; }
+.btn-google:hover:not(:disabled) { background: #f8f9fa; box-shadow: 0 1px 3px rgba(0, 0, 0, .12); }
+.btn-google:disabled { opacity: .55; cursor: not-allowed; }
+.logo-google { width: 18px; height: 18px; flex-shrink: 0; }
 
-.error {
+.aviso {
   background: var(--alerta-fondo);
   color: var(--alerta-texto);
   border-radius: 10px;
   padding: 9px 12px;
   font-size: .85rem;
   margin-bottom: 14px;
+  text-align: left;
   display: none;
 }
-.error.visible { display: block; }
+.aviso.visible { display: block; }
+
+.nota { margin-top: 16px; font-size: .78rem; color: var(--suave); }
 
 .volver { margin-top: 18px; font-size: .85rem; }
 .volver a { color: var(--morado); }

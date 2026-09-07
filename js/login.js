@@ -1,34 +1,34 @@
-/* Login del prototipo: valida contra una cuenta de demostración y abre la
-   sesión (ver sesion.js). En producción esto se reemplaza por Supabase Auth;
-   nunca se compara una contraseña en el cliente. */
+/* Login con Google a través de Supabase Auth (ver sesion.js).
+   Ya no hay usuario ni contraseña en el cliente: la identidad la da Google
+   y Supabase emite la sesión. */
 
-const DEMO = { usuario: 'yaleni', clave: 'ycc2026', nombre: 'Yaleni' };
-
-function mostrarError(msg) {
-  const caja = document.getElementById('error');
+function avisar(msg) {
+  const caja = document.getElementById('aviso');
   caja.textContent = msg;
   caja.classList.add('visible');
 }
 
-document.getElementById('formLogin').addEventListener('submit', e => {
-  e.preventDefault();
-  document.getElementById('error').classList.remove('visible');
+document.addEventListener('DOMContentLoaded', async () => {
+  const boton = document.getElementById('btnGoogle');
 
-  const usuario = document.getElementById('usuario').value.trim().toLowerCase();
-  const clave = document.getElementById('clave').value;
-
-  if (!usuario || !clave) {
-    mostrarError('Escribí tu usuario y tu contraseña.');
-    return;
-  }
-  if (usuario !== DEMO.usuario || clave !== DEMO.clave) {
-    mostrarError('Usuario o contraseña incorrectos.');
+  if (!CONFIG_LISTA) {
+    boton.disabled = true;
+    avisar('Falta completar js/config.js con la URL y la anon key del proyecto de Supabase.');
     return;
   }
 
-  Sesion.abrir({ usuario: DEMO.usuario, nombre: DEMO.nombre });
-  location.href = 'app.html';
+  /* Al volver de Google la sesión ya viene abierta: entra directo. */
+  if (await Sesion.actual()) {
+    location.replace('app.html');
+    return;
+  }
+
+  boton.addEventListener('click', async () => {
+    boton.disabled = true;
+    const { error } = await Sesion.entrarConGoogle();
+    if (error) {                                  // si sale bien, el navegador ya se fue a Google
+      boton.disabled = false;
+      avisar('No se pudo iniciar sesión: ' + error.message);
+    }
+  });
 });
-
-/* Si ya hay sesión abierta, no tiene sentido pedir el login otra vez. */
-if (Sesion.actual()) location.replace('app.html');

@@ -3,10 +3,12 @@
    En producción esto se reemplaza por Supabase (ver PLAN.md). */
 
 /* ===== Sesión (ver sesion.js) ===== */
-const sesion = exigirSesion();
+/* La sesión la resuelve Supabase, así que se conoce hasta que responde:
+   se guarda acá y la app arranca recién cuando llega. */
+let sesion = null;
 
-function salir() {
-  Sesion.cerrar();
+async function salir() {
+  await Sesion.cerrar();
   location.replace('login.html');
 }
 
@@ -164,8 +166,11 @@ function renderResumen() {
 }
 
 /* ===== Inicio ===== */
-document.addEventListener('DOMContentLoaded', () => {
-  if (sesion) document.getElementById('saludo').textContent = `Hola, ${sesion.nombre} · YCC Beauty Studio`;
+document.addEventListener('DOMContentLoaded', async () => {
+  sesion = await exigirSesion();
+  if (!sesion) return;                          // sin sesión ya se fue a login.html
+
+  document.getElementById('saludo').textContent = `Hola, ${Sesion.nombreDe(sesion)} · YCC Beauty Studio`;
   document.getElementById('formProducto').addEventListener('submit', addProducto);
   document.getElementById('formFiado').addEventListener('submit', addFiado);
   document.getElementById('buscarProd').addEventListener('input', renderProductos);
