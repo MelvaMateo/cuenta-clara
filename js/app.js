@@ -1,6 +1,5 @@
 /* Cuenta Clara — inventario, fiados y resumen.
-   Datos guardados en localStorage del dispositivo (para la demostración).
-   En producción esto se reemplaza por Supabase (ver PLAN.md). */
+   Los datos viven en Supabase (ver datos.js); esta capa es solo la pantalla. */
 
 /* ===== Sesión (ver sesion.js) ===== */
 /* La sesión la resuelve Supabase, así que se conoce hasta que responde:
@@ -12,13 +11,22 @@ async function salir() {
   location.replace('login.html');
 }
 
-const DB = {
-  get(k) { return JSON.parse(localStorage.getItem(k) || '[]'); },
-  set(k, v) { localStorage.setItem(k, JSON.stringify(v)); },
-};
-
 const fmt = n => 'L ' + Number(n).toFixed(2);            // lempiras con 2 decimales
-const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+/* Copia en memoria de lo último que devolvió la base. Buscar y calcular el
+   resumen no vuelven a pedir nada a la red. */
+let productos = [];
+let fiados = [];
+
+/* Los errores de red o de permisos se muestran; antes de Supabase no había
+   forma de que una operación fallara, ahora sí. */
+function avisar(msg) {
+  const caja = document.getElementById('aviso');
+  caja.textContent = msg;
+  caja.classList.add('visible');
+  clearTimeout(avisar._t);
+  avisar._t = setTimeout(() => caja.classList.remove('visible'), 6000);
+}
 
 /* ===== Navegación por pestañas ===== */
 function showTab(id) {
@@ -30,51 +38,67 @@ function showTab(id) {
 }
 
 /* ===== Inventario (US1, US2, US3) ===== */
-function addProducto(e) {
+async function addProducto(e) {
   e.preventDefault();
   const f = e.target;
   const nombre = f.nombre.value.trim();
   const precio = parseFloat(f.precio.value);
   if (!nombre || isNaN(precio)) {            // validación (US1)
-    alert('Falta el nombre o el precio.');
+    avisar('Falta el nombre o el precio.');
     return;
   }
-  const productos = DB.get('productos');
-  productos.push({
-    id: uid(),
-    nombre,
-    costo: parseFloat(f.costo.value) || 0,
-    precio,
-    stock: parseInt(f.stock.value) || 0,
-    stockMinimo: parseInt(f.stockMinimo.value) || 0,
-  });
-  DB.set('productos', productos);
-  f.reset();
-  renderProductos();
+  const boton = f.querySelector('button[type="submit"]');
+  boton.disabled = true;                     // evita el doble registro por doble toque
+  try {
+    await Datos.agregarProducto({
+      nombre,
+      costo: parseFloat(f.costo.value) || 0,
+      precio,
+      stock: parseInt(f.stock.value) || 0,
+      stockMinimo: parseInt(f.stockMinimo.value) || 0,
+    });
+    f.reset();
+    await cargarProductos();
+  } catch (error) {
+    avisar('No se pudo guardar el producto: ' + error.message);
+  } finally {
+    boton.disabled = false;
+  }
 }
 
-function venderProducto(id) {
-  const productos = DB.get('productos');
+async function venderProducto(id) {
   const p = productos.find(x => x.id === id);
   if (!p) return;
   const cant = parseInt(prompt(`¿Cuántas unidades de "${p.nombre}" vendiste?`, '1'));
   if (!cant || cant <= 0) return;
-  if (cant > p.stock) { alert('No hay suficiente stock.'); return; }
-  p.stock -= cant;                            // descuenta del stock (US2)
-  DB.set('productos', productos);
+  try {
+    await Datos.venderProducto(id, cant);    // descuenta en la base (US2)
+    await cargarProductos();
+  } catch (error) {
+    avisar(error.message);                   // "No hay suficiente stock"
+  }
+}
+
+async function cargarProductos() {
+  try {
+    productos = await Datos.productos();
+  } catch (error) {
+    avisar('No se pudo leer el inventario: ' + error.message);
+    return;
+  }
   renderProductos();
 }
 
 function renderProductos() {
   const q = (document.getElementById('buscarProd').value || '').toLowerCase();
-  const productos = DB.get('productos').filter(p => p.nombre.toLowerCase().includes(q));
+  const lista = productos.filter(p => p.nombre.toLowerCase().includes(q));
   const cont = document.getElementById('listaProductos');
-  if (productos.length === 0) {
+  if (lista.length === 0) {
     cont.innerHTML = '<p class="vacio">Sin productos todavía.</p>';
     return;
   }
-  cont.innerHTML = productos.map(p => {
-    const bajo = p.stock <= p.stockMinimo;     // alerta de bajo stock (US3)
+  cont.innerHTML = lista.map(p => {
+    const bajo = p.stock <= p.stock_minimo;    // alerta de bajo stock (US3)
     const margen = p.precio - p.costo;
     return `<div class="card ${bajo ? 'bajo' : ''}">
       <div class="card-top">
@@ -88,65 +112,71 @@ function renderProductos() {
 }
 
 /* ===== Fiados (US6, US7, US8) ===== */
-function addFiado(e) {
+async function addFiado(e) {
   e.preventDefault();
   const f = e.target;
   const clienta = f.clienta.value.trim();
   const monto = parseFloat(f.monto.value);
   if (!clienta || isNaN(monto) || monto <= 0) {   // validación (US6)
-    alert('Falta la clienta o un monto válido.');
+    avisar('Falta la clienta o un monto válido.');
     return;
   }
-  const fiados = DB.get('fiados');
-  fiados.push({
-    id: uid(),
-    clienta,
-    descripcion: f.descripcion.value.trim(),
-    monto,
-    fecha: new Date().toLocaleDateString(),
-    abonos: [],
-  });
-  DB.set('fiados', fiados);
-  f.reset();
-  renderFiados();
+  const boton = f.querySelector('button[type="submit"]');
+  boton.disabled = true;
+  try {
+    await Datos.agregarFiado({ clienta, descripcion: f.descripcion.value.trim(), monto });
+    f.reset();
+    await cargarFiados();
+  } catch (error) {
+    avisar('No se pudo guardar el fiado: ' + error.message);
+  } finally {
+    boton.disabled = false;
+  }
 }
 
-function saldoDe(fi) {
-  return fi.monto - fi.abonos.reduce((a, b) => a + b.monto, 0);
-}
-
-function abonar(id) {                              // registrar abono (US8)
-  const fiados = DB.get('fiados');
+async function abonar(id) {                        // registrar abono (US8)
   const fi = fiados.find(x => x.id === id);
   if (!fi) return;
-  const saldo = saldoDe(fi);
-  const m = parseFloat(prompt(`Saldo de ${fi.clienta}: ${fmt(saldo)}\n¿Cuánto abona?`, ''));
+  const m = parseFloat(prompt(`Saldo de ${fi.clienta}: ${fmt(fi.saldo)}\n¿Cuánto abona?`, ''));
   if (!m || m <= 0) return;
-  if (m > saldo) { alert('El abono no puede ser mayor al saldo.'); return; }
-  fi.abonos.push({ monto: m, fecha: new Date().toLocaleDateString() });
-  DB.set('fiados', fiados);
+  if (m > fi.saldo) { avisar('El abono no puede ser mayor al saldo.'); return; }
+  try {
+    await Datos.abonar(id, m);
+    await cargarFiados();
+  } catch (error) {
+    avisar('No se pudo registrar el abono: ' + error.message);
+  }
+}
+
+async function cargarFiados() {
+  try {
+    fiados = await Datos.fiados();
+  } catch (error) {
+    avisar('No se pudieron leer los fiados: ' + error.message);
+    return;
+  }
   renderFiados();
 }
 
 function renderFiados() {
   const q = (document.getElementById('buscarFiado').value || '').toLowerCase();
-  const fiados = DB.get('fiados').filter(f => f.clienta.toLowerCase().includes(q));
+  const lista = fiados.filter(f => (f.clienta || '').toLowerCase().includes(q));
   const cont = document.getElementById('listaFiados');
-  const total = fiados.reduce((a, f) => a + saldoDe(f), 0);   // total por cobrar (US7)
+  const total = lista.reduce((a, f) => a + Number(f.saldo), 0);   // total por cobrar (US7)
   document.getElementById('totalPorCobrar').textContent = fmt(total);
-  if (fiados.length === 0) {
+  if (lista.length === 0) {
     cont.innerHTML = '<p class="vacio">Sin fiados.</p>';
     return;
   }
-  cont.innerHTML = fiados.map(f => {
-    const saldo = saldoDe(f);
-    const pagado = saldo <= 0;                       // se marca pagado (US8)
+  cont.innerHTML = lista.map(f => {
+    const pagado = Number(f.saldo) <= 0;             // se marca pagado (US8)
+    const fecha = new Date(f.fecha).toLocaleDateString('es-HN');
     return `<div class="card ${pagado ? 'pagado' : ''}">
       <div class="card-top">
         <strong>${f.clienta}</strong>
-        <span class="pill ${pagado ? 'pill-verde' : 'pill-rojo'}">${pagado ? 'PAGADO' : fmt(saldo)}</span>
+        <span class="pill ${pagado ? 'pill-verde' : 'pill-rojo'}">${pagado ? 'PAGADO' : fmt(f.saldo)}</span>
       </div>
-      <div class="muted">${f.descripcion || '—'} · ${f.fecha} · debía ${fmt(f.monto)}</div>
+      <div class="muted">${f.descripcion || '—'} · ${fecha} · debía ${fmt(f.total)}</div>
       ${pagado ? '' : `<button class="mini" onclick="abonar('${f.id}')">Registrar abono</button>`}
     </div>`;
   }).join('');
@@ -154,11 +184,9 @@ function renderFiados() {
 
 /* ===== Resumen (US9) ===== */
 function renderResumen() {
-  const productos = DB.get('productos');
-  const fiados = DB.get('fiados');
-  const porCobrar = fiados.reduce((a, f) => a + saldoDe(f), 0);
-  const bajoStock = productos.filter(p => p.stock <= p.stockMinimo).length;
-  const valorInv = productos.reduce((a, p) => a + p.stock * p.costo, 0);
+  const porCobrar = fiados.reduce((a, f) => a + Number(f.saldo), 0);
+  const bajoStock = productos.filter(p => p.stock <= p.stock_minimo).length;
+  const valorInv = productos.reduce((a, p) => a + p.stock * Number(p.costo), 0);
   document.getElementById('rPorCobrar').textContent = fmt(porCobrar);
   document.getElementById('rBajoStock').textContent = bajoStock;
   document.getElementById('rValorInv').textContent = fmt(valorInv);
@@ -175,8 +203,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('formFiado').addEventListener('submit', addFiado);
   document.getElementById('buscarProd').addEventListener('input', renderProductos);
   document.getElementById('buscarFiado').addEventListener('input', renderFiados);
-  renderProductos();
-  renderFiados();
+
+  await Promise.all([cargarProductos(), cargarFiados()]);
 });
 
 /* PWA: registra el service worker solo cuando se sirve por http(s) */

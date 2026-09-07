@@ -20,12 +20,18 @@ Fuera de la v1: agenda de citas (ya usa otra app), reportes de margen por caja y
 
 ## Tecnologías
 
-- **Prototipo (este repo):** PWA en HTML, CSS y JavaScript sin compilación. El acceso ya usa **Supabase Auth con Google**; el inventario y los fiados siguen en `localStorage` mientras se migran a PostgreSQL.
-- **Producción (planeada):** Supabase (PostgreSQL + Auth + respaldos) y hosting en Vercel. Ver la arquitectura en [PLAN.md](PLAN.md).
+- **PWA (este repo):** HTML, CSS y JavaScript sin compilación ni dependencias que instalar.
+- **Backend:** Supabase — **Auth** para el acceso y **PostgreSQL** para el inventario, las clientas, las ventas y los fiados. Ya no queda nada en `localStorage`.
+- **Producción (planeada):** hosting en Vercel. Ver la arquitectura en [PLAN.md](PLAN.md).
 
 ## Configuración
 
-El login necesita un proyecto de Supabase con el proveedor de Google activado. Copiá la URL del proyecto y la *anon key* (Supabase → Project Settings → API) en [js/config.js](js/config.js). Mientras queden los valores de ejemplo, el login lo avisa en pantalla en vez de fallar en silencio.
+1. Copiá la URL del proyecto y la *publishable key* (Supabase → Project Settings → API) en [js/config.js](js/config.js). Mientras queden los valores de ejemplo, el login lo avisa en pantalla en vez de fallar en silencio.
+2. Creá el esquema: Supabase → **SQL Editor** → pegá y ejecutá [sql/01_esquema.sql](sql/01_esquema.sql).
+3. Opcional, para la demostración: ejecutá [sql/02_datos_muestra.sql](sql/02_datos_muestra.sql).
+4. Creá la usuaria en **Authentication → Users → Add user**, marcando **Auto Confirm User**.
+
+El acceso es por correo y contraseña. El botón de **Google** aparece solo cuando el proveedor se activa en Supabase: la app consulta qué proveedores hay antes de mostrarlo.
 
 La *anon key* es pública por diseño: viaja al navegador en cualquier app de Supabase, y lo que protege los datos son las políticas RLS. La `service_role key` nunca va en este repo.
 
@@ -48,8 +54,11 @@ Abrí la dirección que imprime: esa es la landing. Desde ahí, **Iniciar sesió
 | `app.html` | La aplicación: inventario, fiados y resumen |
 | `css/base.css` | Reset, colores de la marca y botón, compartidos por las tres páginas |
 | `css/landing.css`, `css/login.css`, `css/app.css` | Estilos propios de cada página |
-| `js/config.js` | URL y *anon key* del proyecto de Supabase |
+| `js/config.js` | URL y *publishable key* del proyecto de Supabase |
 | `js/sesion.js` | Abrir, leer y cerrar sesión contra Supabase Auth; lo usan el login y la app |
+| `js/datos.js` | Todas las consultas a PostgreSQL (inventario, clientas, fiados, abonos) |
 | `js/login.js`, `js/app.js` | Lógica de cada página |
+| `sql/01_esquema.sql` | Tablas, índices, RLS, la vista de fiados y la función de venta |
+| `sql/02_datos_muestra.sql` | Datos inventados para la demostración |
 | `manifest.json`, `sw.js`, `icon.svg` | Soporte PWA (instalable, offline) |
 | `PLAN.md` | Plan y diseño completo: problema, backlog, arquitectura, calidad, despliegue y validación |
