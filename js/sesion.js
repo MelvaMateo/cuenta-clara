@@ -1,4 +1,4 @@
-/* Sesión con Supabase Auth (Google), compartida por el login y la app.
+/* Sesión con Supabase Auth, compartida por el login y la app.
 
    Antes la sesión era una llave en localStorage que el propio navegador se
    escribía: se falsificaba desde la consola. Ahora la emite y la valida
@@ -16,6 +16,10 @@ const Sesion = {
     return data.session;
   },
 
+  async entrarConCorreo(correo, clave) {
+    return sb.auth.signInWithPassword({ email: correo, password: clave });
+  },
+
   /* Manda a Google y vuelve a app.html con la sesión ya abierta. */
   async entrarConGoogle() {
     return sb.auth.signInWithOAuth({
@@ -28,10 +32,27 @@ const Sesion = {
     if (sb) await sb.auth.signOut();
   },
 
-  /* Google manda el nombre en user_metadata; si no viene, queda el correo. */
+  /* Google manda el nombre en user_metadata; con correo no viene, y queda
+     la parte del correo antes de la arroba. */
   nombreDe(sesion) {
-    const meta = (sesion && sesion.user && sesion.user.user_metadata) || {};
-    return meta.full_name || meta.name || (sesion && sesion.user && sesion.user.email) || 'Usuaria';
+    const usuario = (sesion && sesion.user) || {};
+    const meta = usuario.user_metadata || {};
+    if (meta.full_name || meta.name) return meta.full_name || meta.name;
+    return usuario.email ? usuario.email.split('@')[0] : 'Usuaria';
+  },
+
+  /* Qué proveedores tiene activos el proyecto. Sirve para no mostrar el botón
+     de Google mientras el proveedor esté apagado: cuando se active en el panel
+     de Supabase, aparece solo, sin tocar este código. */
+  async proveedores() {
+    try {
+      const r = await fetch(`${SUPABASE_URL}/auth/v1/settings`, {
+        headers: { apikey: SUPABASE_ANON_KEY },
+      });
+      return (await r.json()).external || {};
+    } catch (e) {
+      return {};                                  // sin red: solo correo
+    }
   },
 };
 
