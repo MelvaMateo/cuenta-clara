@@ -1,4 +1,4 @@
-/* Aplicacion (app.html). El reset y los colores estan en base.css. */
+/* Aplicación (app.html). El reset y los colores están en base.css. */
 
 body { padding-bottom: 70px; }
 
@@ -26,23 +26,40 @@ main { padding: 16px; max-width: 520px; margin: 0 auto; }
 
 h2 { font-size: 1rem; margin-bottom: 10px; }
 
+/* ===== Formularios ===== */
 .form {
   background: var(--blanco);
   border-radius: 14px;
   padding: 14px;
-  box-shadow: 0 1px 4px rgba(0,0,0,.08);
+  box-shadow: var(--sombra);
   margin-bottom: 14px;
 }
-.form input {
+.form input, .form select {
   width: 100%;
   padding: 10px;
   margin-bottom: 8px;
   border: 1px solid var(--borde-campo);
   border-radius: 10px;
   font-size: .95rem;
+  font-family: inherit;
+  background: var(--blanco);
+  color: var(--texto);
 }
 .row { display: flex; gap: 8px; }
-.row input { flex: 1; }
+.row .campo, .row input { flex: 1; min-width: 0; }
+
+/* Etiqueta arriba del campo: con tantos números hace falta decir cuál es cuál. */
+.campo {
+  display: block;
+  font-size: .78rem;
+  color: var(--suave);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.campo input, .campo select { margin-top: 3px; }
+
+.ayuda-form { font-size: .8rem; font-weight: 600; margin: 10px 0 6px; }
+.nota-form { font-size: .76rem; color: var(--suave); margin: -2px 0 10px; line-height: 1.4; }
 
 button {
   background: var(--magenta);
@@ -51,10 +68,12 @@ button {
   padding: 11px;
   border-radius: 10px;
   font-size: .95rem;
+  font-family: inherit;
   width: 100%;
   cursor: pointer;
 }
 button:active { opacity: .85; }
+button:disabled { opacity: .55; cursor: not-allowed; }
 
 .buscar {
   width: 100%;
@@ -62,9 +81,37 @@ button:active { opacity: .85; }
   border: 1px solid var(--borde-campo);
   border-radius: 10px;
   margin-bottom: 10px;
+  font-family: inherit;
+  font-size: .95rem;
 }
 
-.lista { display: flex; flex-direction: column; gap: 8px; }
+/* ===== Precio sugerido en vivo ===== */
+.sugerencia { display: none; }
+.sugerencia.visible {
+  display: block;
+  background: #eef7f4;
+  color: var(--ok-texto);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: .82rem;
+  line-height: 1.5;
+  margin: -2px 0 10px;
+}
+.sugerencia.bajo { background: #fff6e6; color: #8a5a00; }
+.sugerencia.perdida { background: var(--alerta-fondo); color: var(--alerta-texto); }
+
+.vista-foto { display: none; }
+.vista-foto.visible {
+  display: block;
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+/* ===== Listas ===== */
+.lista { display: flex; flex-direction: column; gap: 10px; }
 
 .card {
   background: var(--blanco);
@@ -74,25 +121,127 @@ button:active { opacity: .85; }
   border-left: 4px solid var(--magenta);
 }
 .card.bajo { border-left-color: var(--alerta); background: #fff5f5; }
+.card.perdida { border-left-color: var(--alerta-texto); background: #fff0f0; }
 .card.pagado { opacity: .6; border-left-color: #2a9d8f; }
-.card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.card-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
 
-.muted { color: #777; font-size: .82rem; }
+.card-cuerpo { display: flex; gap: 10px; }
+.card-datos { flex: 1; min-width: 0; }
 
-.pill { background: #f0e6ee; padding: 2px 8px; border-radius: 20px; font-size: .78rem; }
-.pill-rojo { background: var(--alerta-fondo); color: var(--alerta-texto); }
-.pill-verde { background: var(--ok-fondo); color: var(--ok-texto); }
+.miniatura {
+  width: 64px; height: 64px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #f4e4f0;
+}
+.miniatura.vacia {
+  display: grid;
+  place-items: center;
+  font-size: 1.6rem;
+}
 
+.precios { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .82rem; margin-top: 4px; }
+.marca-perdida {
+  background: var(--alerta-fondo);
+  color: var(--alerta-texto);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: .78rem;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+.acciones-card { display: flex; gap: 8px; margin-top: 8px; }
 .mini {
   width: auto;
   padding: 6px 12px;
   font-size: .8rem;
-  margin-top: 8px;
   background: var(--morado);
 }
+.mini.secundario { background: transparent; color: var(--morado); border: 1px solid #dcc7d8; }
 
+.muted { color: #777; font-size: .82rem; }
+.pill { background: #f0e6ee; padding: 2px 8px; border-radius: 20px; font-size: .78rem; white-space: nowrap; }
+.pill-rojo { background: var(--alerta-fondo); color: var(--alerta-texto); }
+.pill-verde { background: var(--ok-fondo); color: var(--ok-texto); }
 .vacio { color: #999; text-align: center; padding: 20px; }
 
+/* ===== Caja ===== */
+.caja-card {
+  background: var(--blanco);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: var(--sombra);
+  border-left: 4px solid var(--morado);
+}
+.caja-card.recuperada { border-left-color: var(--ok-texto); }
+
+.costos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 12px;
+  margin: 10px 0;
+  font-size: .82rem;
+}
+.costos div { display: flex; justify-content: space-between; gap: 8px; }
+.costos span { color: var(--suave); }
+.costos .total {
+  grid-column: 1 / -1;
+  border-top: 1px solid var(--borde);
+  padding-top: 6px;
+  margin-top: 2px;
+  font-size: .95rem;
+}
+
+/* El número que hoy no toma en cuenta al ponerle precio a las cosas. */
+.factor {
+  background: #f4e4f0;
+  color: var(--morado);
+  border-radius: 10px;
+  padding: 9px 11px;
+  font-size: .8rem;
+  line-height: 1.45;
+  margin-bottom: 10px;
+}
+
+.barra {
+  height: 10px;
+  background: #efe4ec;
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+.barra i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--magenta), var(--morado));
+  border-radius: 20px;
+}
+.recuperada .barra i { background: var(--ok-texto); }
+
+.pendiente { font-size: .84rem; margin: 8px 0; }
+.ok-msg {
+  background: var(--ok-fondo);
+  color: var(--ok-texto);
+  border-radius: 10px;
+  padding: 9px 11px;
+  font-size: .82rem;
+  margin: 8px 0;
+  line-height: 1.45;
+}
+
+.proyeccion {
+  background: #eef7f4;
+  color: var(--ok-texto);
+  border-radius: 10px;
+  padding: 9px 11px;
+  font-size: .84rem;
+  margin-bottom: 8px;
+}
+.proyeccion.mala { background: var(--alerta-fondo); color: var(--alerta-texto); }
+
+/* ===== Resumen ===== */
 .resumen-mini {
   background: var(--blanco);
   border-radius: 12px;
@@ -101,7 +250,6 @@ button:active { opacity: .85; }
   text-align: center;
   box-shadow: 0 1px 3px rgba(0,0,0,.06);
 }
-
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .stat {
   background: var(--blanco);
@@ -113,6 +261,31 @@ button:active { opacity: .85; }
 .stat span { font-size: 1.5rem; font-weight: 700; color: var(--morado); display: block; }
 .stat label { font-size: .8rem; color: #777; }
 
+.alerta-perdida { display: none; }
+.alerta-perdida.visible {
+  display: block;
+  background: var(--alerta-fondo);
+  color: var(--alerta-texto);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: .85rem;
+  line-height: 1.5;
+  margin-top: 12px;
+}
+
+/* ===== Aviso de error al hablar con Supabase ===== */
+.aviso {
+  background: var(--alerta-fondo);
+  color: var(--alerta-texto);
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: .85rem;
+  margin-bottom: 12px;
+  display: none;
+}
+.aviso.visible { display: block; }
+
+/* ===== Barra de pestañas ===== */
 .tabbar {
   position: fixed;
   bottom: 0; left: 0; right: 0;
@@ -130,15 +303,3 @@ button:active { opacity: .85; }
   border-radius: 0;
 }
 .tabbtn.active { color: var(--magenta); font-weight: 600; border-top: 2px solid var(--magenta); }
-
-/* Aviso de error al hablar con Supabase (red, permisos, stock insuficiente). */
-.aviso {
-  background: var(--alerta-fondo);
-  color: var(--alerta-texto);
-  border-radius: 10px;
-  padding: 9px 12px;
-  font-size: .85rem;
-  margin-bottom: 12px;
-  display: none;
-}
-.aviso.visible { display: block; }

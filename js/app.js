@@ -1,9 +1,7 @@
-/* Cuenta Clara — inventario, fiados y resumen.
+/* Cuenta Clara — cajas, stock, fiados y resumen.
    Los datos viven en Supabase (ver datos.js); esta capa es solo la pantalla. */
 
 /* ===== Sesión (ver sesion.js) ===== */
-/* La sesión la resuelve Supabase, así que se conoce hasta que responde:
-   se guarda acá y la app arranca recién cuando llega. */
 let sesion = null;
 
 async function salir() {
@@ -11,12 +9,15 @@ async function salir() {
   location.replace('login.html');
 }
 
-const fmt = n => 'L ' + Number(n).toFixed(2);            // lempiras con 2 decimales
+const fmt = n => 'L ' + Number(n).toFixed(2);
+const usd = n => '$' + Number(n).toFixed(2);
+const pct = n => Math.round(Number(n) * 100) + '%';
 
-/* Copia en memoria de lo último que devolvió la base. Buscar y calcular el
-   resumen no vuelven a pedir nada a la red. */
+/* Copia en memoria de lo último que devolvió la base. */
+let cajas = [];
 let productos = [];
 let fiados = [];
+let fotoPendiente = null;                       // ruta en Storage de la foto ya subida
 
 /* Traduce los errores de Supabase a algo que diga qué hacer. Un mensaje como
    "relation public.productos does not exist" no le sirve a nadie. */
@@ -29,18 +30,19 @@ function mensajeDe(error) {
     return 'Falta la función vender_producto: corré sql/01_esquema.sql en el SQL Editor.';
   }
   if (codigo === '42501') return 'La base rechazó la operación por permisos (RLS).';
+  if (/bucket not found/i.test(error.message)) {
+    return 'Falta el bucket de fotos: corré sql/01_esquema.sql en el SQL Editor.';
+  }
   if (/failed to fetch|networkerror/i.test(error.message)) return 'Sin conexión con Supabase.';
   return error.message;
 }
 
-/* Los errores de red o de permisos se muestran; antes de Supabase no había
-   forma de que una operación fallara, ahora sí. */
 function avisar(msg) {
   const caja = document.getElementById('aviso');
   caja.textContent = msg;
   caja.classList.add('visible');
   clearTimeout(avisar._t);
-  avisar._t = setTimeout(() => caja.classList.remove('visible'), 6000);
+  avisar._t = setTimeout(() => caja.classList.remove('visible'), 7000);
 }
 
 /* ===== Navegación por pestañas ===== */
@@ -52,28 +54,204 @@ function showTab(id) {
   if (id === 'resumen') renderResumen();
 }
 
-/* ===== Inventario (US1, US2, US3) ===== */
+/* ============================ Cajas ============================ */
+
+async function addCaja(e) {
+  e.preventDefault();
+  const f = e.target;
+  const descripcion = f.descripcion.value.trim();
+  const tipoCambio = parseFloat(f.tipoCambio.value);
+  if (!descripcion || !(tipoCambio > 0)) {
+    avisar('Falta el nombre de la caja o el tipo de cambio.');
+    return;
+  }
+  const boton = f.querySelector('button[type="submit"]');
+  boton.disabled = true;
+  try {
+    await Datos.agregarCaja({
+      descripcion,
+      fecha: f.fecha.value || null,
+      costoLote: parseFloat(f.costoLote.value) || 0,
+      flete: parseFloat(f.flete.value) || 0,
+      aduana: parseFloat(f.aduana.value) || 0,
+      otros: parseFloat(f.otros.value) || 0,
+      tipoCambio,
+      margen: (parseFloat(f.margen.value) || 0) / 100,
+    });
+    f.reset();
+    f.margen.value = 40;
+    await cargarCajas();
+  } catch (error) {
+    avisar('No se pudo guardar la caja: ' + mensajeDe(error));
+  } finally {
+    boton.disabled = false;
+  }
+}
+
+async function cargarCajas() {
+  try {
+    cajas = await Datos.cajas();
+  } catch (error) {
+    avisar('No se pudieron leer las cajas: ' + mensajeDe(error));
+    return;
+  }
+  renderCajas();
+  llenarSelectCajas();
+}
+
+function renderCajas() {
+  const cont = document.getElementById('listaCajas');
+  if (cajas.length === 0) {
+    cont.innerHTML = '<p class="vacio">Todavía no registraste ninguna caja.</p>';
+    return;
+  }
+  cont.innerHTML = cajas.map(c => {
+    const invertido = Number(c.invertido);
+    const vendido = Number(c.vendido);
+    const recuperado = invertido > 0 ? Math.min(vendido / invertido, 1) : 0;
+    const ganancia = Number(c.ganancia_proyectada);
+    const listo = vendido >= invertido;
+    const encarece = Math.round((Number(c.factor) - 1) * 100);
+
+    return `<div class="caja-card ${listo ? 'recuperada' : ''}">
+      <div class="card-top">
+        <strong>${c.descripcion}</strong>
+        <span class="muted">${new Date(c.fecha + 'T12:00:00').toLocaleDateString('es-HN')}</span>
+      </div>
+
+      <div class="costos">
+        <div><span>Lote</span><b>${usd(c.costo_lote_usd)}</b></div>
+        <div><span>Tiendas</span><b>${usd(c.mercaderia_usd - c.costo_lote_usd)}</b></div>
+        <div><span>Flete + aduana</span><b>${usd(c.gastos_usd)}</b></div>
+        <div class="total"><span>Invertiste</span><b>${fmt(invertido)}</b></div>
+      </div>
+
+      <p class="factor">Traerla te encarece la mercadería un <b>${encarece}%</b>
+         — cada $1 de producto te llega costando ${usd(c.factor)}</p>
+
+      <div class="barra"><i style="width:${(recuperado * 100).toFixed(0)}%"></i></div>
+      <p class="muted">${pct(recuperado)} recuperado · vendido ${fmt(vendido)} de ${fmt(invertido)}</p>
+
+      ${listo
+        ? `<p class="ok-msg">Ya recuperaste esta caja. Todo lo que vendas de acá en
+             adelante es ganancia.</p>`
+        : `<p class="pendiente">Te faltan <b>${fmt(c.falta_recuperar)}</b> para recuperar lo que invertiste.</p>`}
+
+      <div class="proyeccion ${ganancia >= 0 ? '' : 'mala'}">
+        Si vendés todo a los precios que pusiste:
+        <b>${ganancia >= 0 ? 'ganás ' : 'perdés '}${fmt(Math.abs(ganancia))}</b>
+        ${invertido > 0 ? `(${Math.round(ganancia / invertido * 100)}%)` : ''}
+      </div>
+
+      <div class="muted">${c.productos} productos · ${c.unidades} unidades · quedan ${c.en_stock}</div>
+    </div>`;
+  }).join('');
+}
+
+function llenarSelectCajas() {
+  const sel = document.getElementById('selCaja');
+  const elegida = sel.value;
+  sel.innerHTML = cajas.length
+    ? cajas.map(c => `<option value="${c.id}">${c.descripcion}</option>`).join('')
+    : '<option value="">Registrá una caja primero</option>';
+  if (elegida) sel.value = elegida;
+  calcularSugerido();
+}
+
+/* ============================ Inventario ============================ */
+
+/* Precio sugerido en vivo, mientras carga el producto: es el momento en que
+   decide cuánto cobrar, y hoy lo hace sin saber lo que le costó traerlo.
+   Para lo del lote es aproximado y se reacomoda al cargar más productos;
+   para lo de tienda es exacto. */
+function calcularSugerido() {
+  const caja = cajas.find(c => c.id === document.getElementById('selCaja').value);
+  const origen = document.getElementById('selOrigen').value;
+  const valor = parseFloat(document.getElementById('inpValor').value);
+  const precio = parseFloat(document.getElementById('inpPrecio').value);
+  const cont = document.getElementById('sugerencia');
+
+  if (!caja || !(valor > 0)) { cont.className = 'sugerencia'; cont.textContent = ''; return; }
+
+  const base = origen === 'lote' ? valor * Number(caja.k) : valor;
+  const costo = base * Number(caja.factor) * Number(caja.tipo_cambio);
+  const sugerido = costo * (1 + Number(caja.margen_deseado));
+
+  if (origen === 'lote' && !(Number(caja.k) > 0)) {
+    cont.className = 'sugerencia';
+    cont.innerHTML = `Guardá este producto y la app repartirá el costo del lote.`;
+    return;
+  }
+
+  let clase = 'sugerencia visible', msg =
+    `Te cuesta <b>${fmt(costo)}</b> · para ganar ${pct(caja.margen_deseado)} vendelo a <b>${fmt(sugerido)}</b>`;
+
+  if (precio > 0 && precio < costo) {
+    clase += ' perdida';
+    msg += `<br>⚠ A ${fmt(precio)} estarías <b>perdiendo ${fmt(costo - precio)}</b> por unidad.`;
+  } else if (precio > 0 && precio < sugerido) {
+    clase += ' bajo';
+    msg += `<br>A ${fmt(precio)} ganás, pero menos de lo que te propusiste.`;
+  }
+  cont.className = clase;
+  cont.innerHTML = msg;
+}
+
+/* La etiqueta del valor cambia según el origen: no es lo mismo un costo real
+   que una estimación, y confundirlos arruinaría el cálculo. */
+function ajustarOrigen() {
+  const esLote = document.getElementById('selOrigen').value === 'lote';
+  document.getElementById('lblValor').firstChild.textContent =
+    esLote ? 'Valor estimado en US$ ' : 'Lo que pagaste en US$ ';
+  document.getElementById('notaOrigen').textContent = esLote
+    ? 'Si no sabés cuánto costó, poné lo que creés que vale. Solo importa que esté bien en proporción a los demás: el total siempre queda anclado a lo que pagaste por el lote.'
+    : 'Poné el costo exacto del recibo, sin flete ni aduana: eso lo suma la app.';
+  calcularSugerido();
+}
+
+async function elegirFoto(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const vista = document.getElementById('vistaFoto');
+  try {
+    fotoPendiente = await Datos.subirFoto(file, sesion.user.id);
+    vista.src = Datos.urlFoto(fotoPendiente);
+    vista.classList.add('visible');
+  } catch (error) {
+    fotoPendiente = null;
+    avisar('No se pudo subir la foto: ' + mensajeDe(error));
+  }
+}
+
 async function addProducto(e) {
   e.preventDefault();
   const f = e.target;
   const nombre = f.nombre.value.trim();
-  const precio = parseFloat(f.precio.value);
-  if (!nombre || isNaN(precio)) {            // validación (US1)
-    avisar('Falta el nombre o el precio.');
+  const valorUsd = parseFloat(f.valorUsd.value);
+  const cantidad = parseInt(f.cantidad.value);
+  if (!f.cajaId.value) { avisar('Elegí de qué caja salió el producto.'); return; }
+  if (!nombre || !(valorUsd >= 0) || !(cantidad > 0)) {
+    avisar('Falta el nombre, el valor o la cantidad.');
     return;
   }
   const boton = f.querySelector('button[type="submit"]');
-  boton.disabled = true;                     // evita el doble registro por doble toque
+  boton.disabled = true;
   try {
     await Datos.agregarProducto({
+      cajaId: f.cajaId.value,
       nombre,
-      costo: parseFloat(f.costo.value) || 0,
-      precio,
-      stock: parseInt(f.stock.value) || 0,
+      origen: f.origen.value,
+      valorUsd,
+      cantidad,
       stockMinimo: parseInt(f.stockMinimo.value) || 0,
+      precio: parseFloat(f.precio.value) || 0,
+      fotoPath: fotoPendiente,
     });
     f.reset();
-    await cargarProductos();
+    fotoPendiente = null;
+    document.getElementById('vistaFoto').classList.remove('visible');
+    document.getElementById('sugerencia').className = 'sugerencia';
+    await Promise.all([cargarProductos(), cargarCajas()]);   // la caja cambia al sumar producto
   } catch (error) {
     avisar('No se pudo guardar el producto: ' + mensajeDe(error));
   } finally {
@@ -87,10 +265,25 @@ async function venderProducto(id) {
   const cant = parseInt(prompt(`¿Cuántas unidades de "${p.nombre}" vendiste?`, '1'));
   if (!cant || cant <= 0) return;
   try {
-    await Datos.venderProducto(id, cant);    // descuenta en la base (US2)
-    await cargarProductos();
+    await Datos.venderProducto(id, cant);
+    await Promise.all([cargarProductos(), cargarCajas()]);
   } catch (error) {
     avisar(mensajeDe(error));                   // "No hay suficiente stock"
+  }
+}
+
+async function cambiarPrecio(id) {
+  const p = productos.find(x => x.id === id);
+  if (!p) return;
+  const nuevo = parseFloat(prompt(
+    `${p.nombre}\nTe cuesta ${fmt(p.costo_unitario)}\nSugerido: ${fmt(p.precio_sugerido)}\n\nNuevo precio:`,
+    p.precio));
+  if (!(nuevo >= 0)) return;
+  try {
+    await Datos.cambiarPrecio(id, nuevo);
+    await Promise.all([cargarProductos(), cargarCajas()]);
+  } catch (error) {
+    avisar('No se pudo cambiar el precio: ' + mensajeDe(error));
   }
 }
 
@@ -113,26 +306,44 @@ function renderProductos() {
     return;
   }
   cont.innerHTML = lista.map(p => {
-    const bajo = p.stock <= p.stock_minimo;    // alerta de bajo stock (US3)
-    const margen = p.precio - p.costo;
-    return `<div class="card ${bajo ? 'bajo' : ''}">
-      <div class="card-top">
-        <strong>${p.nombre}</strong>
-        <span class="pill ${bajo ? 'pill-rojo' : ''}">stock: ${p.stock}${bajo ? ' !' : ''}</span>
+    const bajo = p.stock <= p.stock_minimo;
+    const perdida = Number(p.precio) > 0 && Number(p.precio) < Number(p.costo_unitario);
+    const foto = Datos.urlFoto(p.foto_path);
+    return `<div class="card ${perdida ? 'perdida' : bajo ? 'bajo' : ''}">
+      <div class="card-cuerpo">
+        ${foto ? `<img class="miniatura" src="${foto}" alt="">` : '<div class="miniatura vacia">📦</div>'}
+        <div class="card-datos">
+          <div class="card-top">
+            <strong>${p.nombre}</strong>
+            <span class="pill ${bajo ? 'pill-rojo' : ''}">quedan ${p.stock}${bajo ? ' !' : ''}</span>
+          </div>
+          <div class="muted">${p.caja} · ${p.origen === 'lote' ? 'del lote' : 'de tienda'}</div>
+          <div class="precios">
+            <span>Te cuesta <b>${fmt(p.costo_unitario)}</b></span>
+            <span>Lo vendés a <b>${fmt(p.precio)}</b></span>
+          </div>
+          ${perdida
+            ? `<div class="marca-perdida">⚠ Estás perdiendo ${fmt(p.costo_unitario - p.precio)} en cada uno.
+                 Sugerido: ${fmt(p.precio_sugerido)}</div>`
+            : `<div class="muted">Sugerido ${fmt(p.precio_sugerido)}</div>`}
+        </div>
       </div>
-      <div class="muted">Precio ${fmt(p.precio)} · Costo ${fmt(p.costo)} · Margen ${fmt(margen)}</div>
-      <button class="mini" onclick="venderProducto('${p.id}')">Vender</button>
+      <div class="acciones-card">
+        <button class="mini" onclick="venderProducto('${p.id}')">Vender</button>
+        <button class="mini secundario" onclick="cambiarPrecio('${p.id}')">Cambiar precio</button>
+      </div>
     </div>`;
   }).join('');
 }
 
-/* ===== Fiados (US6, US7, US8) ===== */
+/* ============================ Fiados ============================ */
+
 async function addFiado(e) {
   e.preventDefault();
   const f = e.target;
   const clienta = f.clienta.value.trim();
   const monto = parseFloat(f.monto.value);
-  if (!clienta || isNaN(monto) || monto <= 0) {   // validación (US6)
+  if (!clienta || isNaN(monto) || monto <= 0) {
     avisar('Falta la clienta o un monto válido.');
     return;
   }
@@ -149,12 +360,12 @@ async function addFiado(e) {
   }
 }
 
-async function abonar(id) {                        // registrar abono (US8)
+async function abonar(id) {
   const fi = fiados.find(x => x.id === id);
   if (!fi) return;
   const m = parseFloat(prompt(`Saldo de ${fi.clienta}: ${fmt(fi.saldo)}\n¿Cuánto abona?`, ''));
   if (!m || m <= 0) return;
-  if (m > fi.saldo) { avisar('El abono no puede ser mayor al saldo.'); return; }
+  if (m > Number(fi.saldo)) { avisar('El abono no puede ser mayor al saldo.'); return; }
   try {
     await Datos.abonar(id, m);
     await cargarFiados();
@@ -177,14 +388,14 @@ function renderFiados() {
   const q = (document.getElementById('buscarFiado').value || '').toLowerCase();
   const lista = fiados.filter(f => (f.clienta || '').toLowerCase().includes(q));
   const cont = document.getElementById('listaFiados');
-  const total = lista.reduce((a, f) => a + Number(f.saldo), 0);   // total por cobrar (US7)
+  const total = lista.reduce((a, f) => a + Number(f.saldo), 0);
   document.getElementById('totalPorCobrar').textContent = fmt(total);
   if (lista.length === 0) {
     cont.innerHTML = '<p class="vacio">Sin fiados.</p>';
     return;
   }
   cont.innerHTML = lista.map(f => {
-    const pagado = Number(f.saldo) <= 0;             // se marca pagado (US8)
+    const pagado = Number(f.saldo) <= 0;
     const fecha = new Date(f.fecha).toLocaleDateString('es-HN');
     return `<div class="card ${pagado ? 'pagado' : ''}">
       <div class="card-top">
@@ -197,28 +408,48 @@ function renderFiados() {
   }).join('');
 }
 
-/* ===== Resumen (US9) ===== */
+/* ============================ Resumen ============================ */
+
 function renderResumen() {
   const porCobrar = fiados.reduce((a, f) => a + Number(f.saldo), 0);
   const bajoStock = productos.filter(p => p.stock <= p.stock_minimo).length;
-  const valorInv = productos.reduce((a, p) => a + p.stock * Number(p.costo), 0);
+  /* Lo que queda por vender, a precio de venta: es lo que le importa cobrar,
+     no un valor al costo. */
+  const porVender = productos.reduce((a, p) => a + p.stock * Number(p.precio), 0);
   document.getElementById('rPorCobrar').textContent = fmt(porCobrar);
   document.getElementById('rBajoStock').textContent = bajoStock;
-  document.getElementById('rValorInv').textContent = fmt(valorInv);
+  document.getElementById('rPorVender').textContent = fmt(porVender);
   document.getElementById('rProductos').textContent = productos.length;
+
+  const perdiendo = productos.filter(p => Number(p.precio) > 0
+                                       && Number(p.precio) < Number(p.costo_unitario));
+  const caja = document.getElementById('alertaPerdida');
+  caja.className = perdiendo.length ? 'alerta-perdida visible' : 'alerta-perdida';
+  caja.innerHTML = perdiendo.length
+    ? `<b>⚠ ${perdiendo.length} producto${perdiendo.length > 1 ? 's se están' : ' se está'}
+         vendiendo por debajo del costo:</b><br>${perdiendo.map(p => p.nombre).join(', ')}`
+    : '';
 }
 
-/* ===== Inicio ===== */
+/* ============================ Inicio ============================ */
+
 document.addEventListener('DOMContentLoaded', async () => {
   sesion = await exigirSesion();
-  if (!sesion) return;                          // sin sesión ya se fue a login.html
+  if (!sesion) return;
 
   document.getElementById('saludo').textContent = `Hola, ${Sesion.nombreDe(sesion)} · YCC Beauty Studio`;
+  document.getElementById('formCaja').addEventListener('submit', addCaja);
   document.getElementById('formProducto').addEventListener('submit', addProducto);
   document.getElementById('formFiado').addEventListener('submit', addFiado);
   document.getElementById('buscarProd').addEventListener('input', renderProductos);
   document.getElementById('buscarFiado').addEventListener('input', renderFiados);
+  document.getElementById('selOrigen').addEventListener('change', ajustarOrigen);
+  document.getElementById('selCaja').addEventListener('change', calcularSugerido);
+  document.getElementById('inpValor').addEventListener('input', calcularSugerido);
+  document.getElementById('inpPrecio').addEventListener('input', calcularSugerido);
+  document.getElementById('inpFoto').addEventListener('change', elegirFoto);
 
+  await cargarCajas();
   await Promise.all([cargarProductos(), cargarFiados()]);
 });
 

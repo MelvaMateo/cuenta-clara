@@ -51,14 +51,14 @@ Abrí la dirección que imprime: esa es la landing. Desde ahí, **Iniciar sesió
 |---|---|
 | `index.html` | Landing page: qué resuelve la app y acceso al login |
 | `login.html` | Pantalla de acceso con Google (Supabase Auth) |
-| `app.html` | La aplicación: inventario, fiados y resumen |
+| `app.html` | La aplicación: cajas, stock, fiados y resumen |
 | `css/base.css` | Reset, colores de la marca y botón, compartidos por las tres páginas |
 | `css/landing.css`, `css/login.css`, `css/app.css` | Estilos propios de cada página |
 | `js/config.js` | URL y *publishable key* del proyecto de Supabase |
 | `js/sesion.js` | Abrir, leer y cerrar sesión contra Supabase Auth; lo usan el login y la app |
-| `js/datos.js` | Todas las consultas a PostgreSQL (inventario, clientas, fiados, abonos) |
+| `js/datos.js` | Consultas a PostgreSQL y subida de fotos a Storage |
 | `js/login.js`, `js/app.js` | Lógica de cada página |
-| `sql/01_esquema.sql` | Tablas, índices, RLS, la vista de fiados y la función de venta |
+| `sql/01_esquema.sql` | Tablas, índices, RLS, el cálculo del costo por caja y la función de venta |
 | `sql/02_datos_muestra.sql` | Datos inventados para la demostración |
 | `manifest.json`, `sw.js`, `icon.svg` | Soporte PWA (instalable, offline) |
 | `PLAN.md` | Plan y diseño completo: problema, backlog, arquitectura, calidad, despliegue y validación |

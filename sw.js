@@ -3,7 +3,7 @@
    Estrategia: primero la red y, solo si falla, la copia guardada. Antes era al
    revés (primero la caché) y cada cambio en el HTML, el CSS o el JS quedaba
    invisible hasta acordarse de subir a mano el número de versión de abajo. */
-const CACHE = 'cuenta-clara-v6';
+const CACHE = 'cuenta-clara-v7';
 const ASSETS = [
   './',
   './index.html',

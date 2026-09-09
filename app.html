@@ -22,21 +22,98 @@
     <!-- Errores de red o de permisos al hablar con Supabase. -->
     <div id="aviso" class="aviso" role="alert"></div>
 
+    <!-- ===== Cajas ===== -->
+    <section id="cajas" class="tab active">
+      <form id="formCaja" class="form">
+        <h2>Registrar una caja</h2>
+        <input name="descripcion" placeholder="Nombre de la caja (ej. Caja agosto)" required>
+        <div class="row">
+          <label class="campo">Llegó
+            <input name="fecha" type="date">
+          </label>
+          <label class="campo">Tipo de cambio
+            <input name="tipoCambio" type="number" step="0.0001" placeholder="24.65" required>
+          </label>
+        </div>
+
+        <p class="ayuda-form">Lo que pagaste, en dólares:</p>
+        <div class="row">
+          <label class="campo">Lote surtido
+            <input name="costoLote" type="number" step="0.01" placeholder="0.00">
+          </label>
+          <label class="campo">Flete
+            <input name="flete" type="number" step="0.01" placeholder="0.00">
+          </label>
+        </div>
+        <div class="row">
+          <label class="campo">Aduana
+            <input name="aduana" type="number" step="0.01" placeholder="0.00">
+          </label>
+          <label class="campo">Otros gastos
+            <input name="otros" type="number" step="0.01" placeholder="0.00">
+          </label>
+        </div>
+        <p class="nota-form">Lo comprado en tiendas se suma solo, desde cada producto que cargues.</p>
+
+        <label class="campo">Ganancia que querés (%)
+          <input name="margen" type="number" step="1" value="40" required>
+        </label>
+
+        <button type="submit">Guardar caja</button>
+      </form>
+
+      <div id="listaCajas" class="lista"></div>
+    </section>
+
     <!-- ===== Inventario ===== -->
-    <section id="inventario" class="tab active">
+    <section id="inventario" class="tab">
       <form id="formProducto" class="form">
         <h2>Agregar producto</h2>
+
+        <label class="campo">¿De qué caja salió?
+          <select name="cajaId" id="selCaja" required></select>
+        </label>
+
         <input name="nombre" placeholder="Nombre del producto" required>
+
+        <label class="campo">¿De dónde vino?
+          <select name="origen" id="selOrigen">
+            <option value="lote">Del lote surtido (no sé cuánto costó)</option>
+            <option value="tienda">Lo compré en una tienda (sé cuánto pagué)</option>
+          </select>
+        </label>
+
+        <label class="campo" id="lblValor">Valor estimado en US$
+          <input name="valorUsd" id="inpValor" type="number" step="0.01" placeholder="0.00" required>
+        </label>
+        <p class="nota-form" id="notaOrigen">
+          Si no sabés cuánto costó, poné lo que creés que vale. Solo importa que
+          esté bien en proporción a los demás: el total siempre queda anclado a
+          lo que pagaste por el lote.
+        </p>
+
         <div class="row">
-          <input name="costo" type="number" step="0.01" placeholder="Costo (L)">
-          <input name="precio" type="number" step="0.01" placeholder="Precio (L)" required>
+          <label class="campo">Cantidad
+            <input name="cantidad" type="number" placeholder="1" required>
+          </label>
+          <label class="campo">Avisarme cuando queden
+            <input name="stockMinimo" type="number" placeholder="2">
+          </label>
         </div>
-        <div class="row">
-          <input name="stock" type="number" placeholder="Stock">
-          <input name="stockMinimo" type="number" placeholder="Mínimo">
-        </div>
+
+        <label class="campo">Precio de venta (L)
+          <input name="precio" id="inpPrecio" type="number" step="0.01" placeholder="0.00">
+        </label>
+        <div id="sugerencia" class="sugerencia"></div>
+
+        <label class="campo">Foto del producto
+          <input name="foto" id="inpFoto" type="file" accept="image/*" capture="environment">
+        </label>
+        <img id="vistaFoto" class="vista-foto" alt="">
+
         <button type="submit">Guardar producto</button>
       </form>
+
       <input id="buscarProd" class="buscar" placeholder="Buscar producto...">
       <div id="listaProductos" class="lista"></div>
     </section>
@@ -61,14 +138,16 @@
       <div class="grid">
         <div class="stat"><span id="rPorCobrar">L 0.00</span><label>Por cobrar</label></div>
         <div class="stat"><span id="rBajoStock">0</span><label>Bajo stock</label></div>
-        <div class="stat"><span id="rValorInv">L 0.00</span><label>Valor inventario</label></div>
+        <div class="stat"><span id="rPorVender">L 0.00</span><label>Por vender</label></div>
         <div class="stat"><span id="rProductos">0</span><label>Productos</label></div>
       </div>
+      <div id="alertaPerdida" class="alerta-perdida"></div>
     </section>
   </main>
 
   <nav class="tabbar">
-    <button class="tabbtn active" data-tab="inventario" onclick="showTab('inventario')">Inventario</button>
+    <button class="tabbtn active" data-tab="cajas" onclick="showTab('cajas')">Cajas</button>
+    <button class="tabbtn" data-tab="inventario" onclick="showTab('inventario')">Stock</button>
     <button class="tabbtn" data-tab="fiados" onclick="showTab('fiados')">Fiados</button>
     <button class="tabbtn" data-tab="resumen" onclick="showTab('resumen')">Resumen</button>
   </nav>

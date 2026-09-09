@@ -1,82 +1,127 @@
 -- Cuenta Clara — datos de muestra para la demostración.
 -- Correr después de 01_esquema.sql, en: Supabase → SQL Editor → Run.
 --
--- Los productos y las clientas son INVENTADOS, con precios plausibles para un
--- salón de Choloma en lempiras. Reemplazalos por los reales de Yaleni cuando
--- los tengas: lo único que hay que cambiar son los VALUES de más abajo.
+-- Una caja MIXTA, como las que trae Yaleni: parte lote surtido (sin precios
+-- por producto, valores estimados) y parte comprada en tiendas en USA (costo
+-- real, con recibo). Los números son inventados pero plausibles; cambiá los
+-- VALUES por los reales cuando los tengas.
 --
 -- Cambiá este correo si querés cargar la muestra en la otra cuenta.
 do $$
 declare
-  v_owner   uuid;
-  v_caja    uuid;
-  v_karla   uuid;
-  v_wendy   uuid;
-  v_suyapa  uuid;
-  v_venta   uuid;
+  v_owner  uuid;
+  v_caja   uuid;
+  v_karla  uuid;
+  v_wendy  uuid;
+  v_suyapa uuid;
+  v_venta  uuid;
 begin
   select id into v_owner from auth.users where email = 'odany_m@unitec.edu';
   if v_owner is null then
     raise exception 'No existe ese usuario. Revisá el correo en Authentication → Users.';
   end if;
 
-  -- Sin datos previos, para poder correr esto más de una vez.
-  delete from public.ventas    where owner_id = v_owner;
-  delete from public.productos where owner_id = v_owner;
-  delete from public.clientas  where owner_id = v_owner;
-  delete from public.cajas     where owner_id = v_owner;
+  -- Limpio para poder correr esto más de una vez.
+  delete from public.ventas   where owner_id = v_owner;
+  delete from public.cajas    where owner_id = v_owner;   -- arrastra sus productos
+  delete from public.clientas where owner_id = v_owner;
 
-  -- ------------------------------------------------------------------ caja
-  insert into public.cajas (owner_id, descripcion, fecha, costo_total_usd, tipo_cambio)
-  values (v_owner, 'Caja de agosto — productos de cabello', '2026-08-14', 320.00, 24.6500)
+  -- -------------------------------------------------------------- la caja
+  --   Lote surtido        $200
+  --   Compras en tienda   $190   (se calcula solo desde los productos)
+  --   Flete $45 + Aduana $38 + Otros $12 = $95 de gastos
+  --   → traer la mercadería la encarece ~24%
+  insert into public.cajas
+    (owner_id, descripcion, fecha, costo_lote_usd, flete_usd, aduana_usd, otros_usd,
+     tipo_cambio, margen_deseado)
+  values
+    (v_owner, 'Caja agosto 2026', '2026-08-14', 200.00, 45.00, 38.00, 12.00, 24.6500, 0.400)
   returning id into v_caja;
 
-  -- ------------------------------------------------------------- productos
-  insert into public.productos (owner_id, caja_id, nombre, costo, precio, stock, stock_minimo) values
-    (v_owner, v_caja, 'Tinte rubio ceniza',        180.00, 320.00,  6, 2),
-    (v_owner, v_caja, 'Shampoo matizador 300 ml',  210.00, 380.00,  1, 3),  -- bajo stock
-    (v_owner, v_caja, 'Keratina 500 ml',           340.00, 590.00,  4, 2),
-    (v_owner, v_caja, 'Acondicionador reparador',  150.00, 260.00,  9, 3),
-    (v_owner, v_caja, 'Tratamiento capilar ampolla',  45.00,  95.00, 24, 6),
-    (v_owner, v_caja, 'Esmalte gel rojo',           70.00, 140.00,  2, 4),  -- bajo stock
-    (v_owner, null,   'Secadora de cabello 1800W', 950.00, 1500.00, 2, 1);
+  -- ------------------------------------------- comprado en tienda (costo real)
+  insert into public.productos
+    (owner_id, caja_id, nombre, origen, valor_usd, cantidad, stock, stock_minimo, precio) values
+    (v_owner, v_caja, 'Plancha de cabello 450°F', 'tienda', 45.00, 2, 1, 1, 1900.00),
+    (v_owner, v_caja, 'Set CeraVe limpiador + crema', 'tienda', 25.00, 4, 3, 2, 1050.00);
 
-  -- -------------------------------------------------------------- clientas
+  -- --------------------------------------------- del lote (valor estimado)
+  -- Ella no sabe cuánto costó cada cosa: estima cuánto vale. Solo importan
+  -- las proporciones — el total queda anclado a los $200 que sí pagó.
+  insert into public.productos
+    (owner_id, caja_id, nombre, origen, valor_usd, cantidad, stock, stock_minimo, precio) values
+    (v_owner, v_caja, 'Cartera sintética negra',   'lote', 30.00,  2, 2, 1,  850.00),
+    (v_owner, v_caja, 'Paleta de sombras 18 tonos','lote', 18.00,  3, 1, 2,  520.00),
+    (v_owner, v_caja, 'Sérum vitamina C 30 ml',    'lote', 12.00,  4, 4, 2,  360.00),
+    (v_owner, v_caja, 'Cepillo desenredante',      'lote',  7.00,  6, 5, 2,  210.00),
+    (v_owner, v_caja, 'Organizador acrílico',      'lote',  8.00,  5, 5, 2,  150.00),  -- ¡bajo el costo!
+    (v_owner, v_caja, 'Labial mate surtido',       'lote',  6.00, 10, 8, 3,  180.00);
+
+  -- El organizador quedó a L 150 y su costo real ronda L 161: la app lo va a
+  -- marcar como venta con pérdida. Es justo el error que hoy no puede ver.
+
+  -- ------------------------------------------------------ ventas de contado
+  -- Dan el "recuperado" de la caja. La cantidad coincide con cantidad − stock.
+  insert into public.ventas (owner_id, total, canal, es_fiada, fecha)
+       values (v_owner, 1900.00, 'local', false, now() - interval '9 days')
+    returning id into v_venta;
+  insert into public.detalle_venta (owner_id, venta_id, producto_id, cantidad, precio_unit)
+       select v_owner, v_venta, id, 1, 1900.00 from public.productos
+        where caja_id = v_caja and nombre = 'Plancha de cabello 450°F';
+
+  insert into public.ventas (owner_id, total, canal, es_fiada, fecha)
+       values (v_owner, 1050.00, 'redes', false, now() - interval '5 days')
+    returning id into v_venta;
+  insert into public.detalle_venta (owner_id, venta_id, producto_id, cantidad, precio_unit)
+       select v_owner, v_venta, id, 1, 1050.00 from public.productos
+        where caja_id = v_caja and nombre = 'Set CeraVe limpiador + crema';
+
+  insert into public.ventas (owner_id, total, canal, es_fiada, fecha)
+       values (v_owner, 1400.00, 'local', false, now() - interval '3 days')
+    returning id into v_venta;
+  insert into public.detalle_venta (owner_id, venta_id, producto_id, cantidad, precio_unit) values
+    (v_owner, v_venta, (select id from public.productos where caja_id = v_caja and nombre = 'Paleta de sombras 18 tonos'), 2, 520.00),
+    (v_owner, v_venta, (select id from public.productos where caja_id = v_caja and nombre = 'Labial mate surtido'),        2, 180.00);
+
+  insert into public.ventas (owner_id, total, canal, es_fiada, fecha)
+       values (v_owner, 210.00, 'local', false, now() - interval '1 day')
+    returning id into v_venta;
+  insert into public.detalle_venta (owner_id, venta_id, producto_id, cantidad, precio_unit)
+       select v_owner, v_venta, id, 1, 210.00 from public.productos
+        where caja_id = v_caja and nombre = 'Cepillo desenredante';
+
+  -- ------------------------------------------------------------- clientas
   insert into public.clientas (owner_id, nombre, telefono)
        values (v_owner, 'Karla Medina', '9712-5805') returning id into v_karla;
   insert into public.clientas (owner_id, nombre, telefono)
-       values (v_owner, 'Wendy Cruz',   '3345-1120') returning id into v_wendy;
+       values (v_owner, 'Wendy Cruz', '3345-1120')   returning id into v_wendy;
   insert into public.clientas (owner_id, nombre, telefono)
        values (v_owner, 'Suyapa Banegas', null)      returning id into v_suyapa;
 
-  -- ---------------------------------------------- fiados (ventas fiadas)
-  -- 1) Fiado con un abono parcial: saldo 450 − 200 = 250
+  -- ---------------------------------------------------- fiados (productos)
+  -- 1) Con abono parcial: saldo 850 − 300 = 550
   insert into public.ventas (owner_id, clienta_id, descripcion, es_fiada, total, fecha)
-       values (v_owner, v_karla, 'Tinte y tratamiento', true, 450.00, now() - interval '12 days')
-       returning id into v_venta;
+       values (v_owner, v_karla, 'Cartera sintética negra', true, 850.00, now() - interval '12 days')
+    returning id into v_venta;
   insert into public.abonos (owner_id, venta_id, monto, fecha)
-       values (v_owner, v_venta, 200.00, now() - interval '4 days');
+       values (v_owner, v_venta, 300.00, now() - interval '4 days');
 
-  -- 2) Fiado sin abonos: saldo 590
+  -- 2) Sin abonos: saldo 1,050
   insert into public.ventas (owner_id, clienta_id, descripcion, es_fiada, total, fecha)
-       values (v_owner, v_wendy, 'Keratina 500 ml', true, 590.00, now() - interval '6 days');
+       values (v_owner, v_wendy, 'Set CeraVe limpiador + crema', true, 1050.00, now() - interval '6 days');
 
-  -- 3) Fiado ya pagado: saldo 0, debe verse como PAGADO
+  -- 3) Ya pagado: debe verse como PAGADO
   insert into public.ventas (owner_id, clienta_id, descripcion, es_fiada, total, fecha)
-       values (v_owner, v_suyapa, 'Esmalte gel y lima', true, 180.00, now() - interval '20 days')
-       returning id into v_venta;
+       values (v_owner, v_suyapa, 'Sérum vitamina C 30 ml', true, 360.00, now() - interval '20 days')
+    returning id into v_venta;
   insert into public.abonos (owner_id, venta_id, monto, fecha) values
-    (v_owner, v_venta, 100.00, now() - interval '15 days'),
-    (v_owner, v_venta,  80.00, now() - interval '9 days');
+    (v_owner, v_venta, 200.00, now() - interval '15 days'),
+    (v_owner, v_venta, 160.00, now() - interval '9 days');
 
-  -- ------------------------------------------- una venta de contado (US5)
-  insert into public.ventas (owner_id, clienta_id, descripcion, canal, es_fiada, total, fecha)
-       values (v_owner, null, 'Acondicionador reparador', 'redes', false, 260.00, now() - interval '2 days')
-       returning id into v_venta;
-  insert into public.detalle_venta (owner_id, venta_id, producto_id, cantidad, precio_unit)
-  select v_owner, v_venta, id, 1, 260.00
-    from public.productos
-   where owner_id = v_owner and nombre = 'Acondicionador reparador';
-
-  raise notice 'Listo: 7 productos, 3 clientas, 3 fiados (uno pagado) y 1 venta de contado.';
+  raise notice 'Listo: 1 caja mixta con 8 productos, 4 ventas y 3 fiados (uno pagado).';
 end $$;
+
+-- Para revisar que el cálculo dé lo esperado:
+--   select descripcion, invertido, factor, valor_venta, vendido,
+--          falta_recuperar, ganancia_proyectada from public.cajas_resumen;
+--   select nombre, origen, costo_unitario, precio, precio_sugerido
+--     from public.productos_costeados order by costo_unitario desc;
