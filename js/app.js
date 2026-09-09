@@ -18,6 +18,21 @@ const fmt = n => 'L ' + Number(n).toFixed(2);            // lempiras con 2 decim
 let productos = [];
 let fiados = [];
 
+/* Traduce los errores de Supabase a algo que diga qué hacer. Un mensaje como
+   "relation public.productos does not exist" no le sirve a nadie. */
+function mensajeDe(error) {
+  const codigo = error.code || '';
+  if (codigo === '42P01' || codigo === 'PGRST205' || /schema cache|does not exist/i.test(error.message)) {
+    return 'Faltan las tablas en Supabase: corré sql/01_esquema.sql en el SQL Editor.';
+  }
+  if (codigo === '42883' || codigo === 'PGRST202') {
+    return 'Falta la función vender_producto: corré sql/01_esquema.sql en el SQL Editor.';
+  }
+  if (codigo === '42501') return 'La base rechazó la operación por permisos (RLS).';
+  if (/failed to fetch|networkerror/i.test(error.message)) return 'Sin conexión con Supabase.';
+  return error.message;
+}
+
 /* Los errores de red o de permisos se muestran; antes de Supabase no había
    forma de que una operación fallara, ahora sí. */
 function avisar(msg) {
@@ -60,7 +75,7 @@ async function addProducto(e) {
     f.reset();
     await cargarProductos();
   } catch (error) {
-    avisar('No se pudo guardar el producto: ' + error.message);
+    avisar('No se pudo guardar el producto: ' + mensajeDe(error));
   } finally {
     boton.disabled = false;
   }
@@ -75,7 +90,7 @@ async function venderProducto(id) {
     await Datos.venderProducto(id, cant);    // descuenta en la base (US2)
     await cargarProductos();
   } catch (error) {
-    avisar(error.message);                   // "No hay suficiente stock"
+    avisar(mensajeDe(error));                   // "No hay suficiente stock"
   }
 }
 
@@ -83,7 +98,7 @@ async function cargarProductos() {
   try {
     productos = await Datos.productos();
   } catch (error) {
-    avisar('No se pudo leer el inventario: ' + error.message);
+    avisar('No se pudo leer el inventario: ' + mensajeDe(error));
     return;
   }
   renderProductos();
@@ -128,7 +143,7 @@ async function addFiado(e) {
     f.reset();
     await cargarFiados();
   } catch (error) {
-    avisar('No se pudo guardar el fiado: ' + error.message);
+    avisar('No se pudo guardar el fiado: ' + mensajeDe(error));
   } finally {
     boton.disabled = false;
   }
@@ -144,7 +159,7 @@ async function abonar(id) {                        // registrar abono (US8)
     await Datos.abonar(id, m);
     await cargarFiados();
   } catch (error) {
-    avisar('No se pudo registrar el abono: ' + error.message);
+    avisar('No se pudo registrar el abono: ' + mensajeDe(error));
   }
 }
 
@@ -152,7 +167,7 @@ async function cargarFiados() {
   try {
     fiados = await Datos.fiados();
   } catch (error) {
-    avisar('No se pudieron leer los fiados: ' + error.message);
+    avisar('No se pudieron leer los fiados: ' + mensajeDe(error));
     return;
   }
   renderFiados();
