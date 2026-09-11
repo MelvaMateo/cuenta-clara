@@ -1,8 +1,10 @@
-/* Landing page (index.html). Los colores y el reset estan en base.css. */
+/* Landing page (index.html). Los colores y el reset están en base.css.
+   Las animaciones son mejora progresiva: sin JavaScript, o con "reducir
+   movimiento" activado en el sistema, la página se ve completa y quieta. */
 
 html { scroll-behavior: smooth; }
 
-body { line-height: 1.55; }
+body { line-height: 1.55; overflow-x: hidden; }
 
 .contenedor { max-width: 1040px; margin: 0 auto; padding: 0 20px; }
 
@@ -56,26 +58,42 @@ body { line-height: 1.55; }
   letter-spacing: -.02em;
   margin-bottom: 14px;
 }
+/* El degradado del titular se desplaza despacio, como un brillo. */
 .portada h1 em {
   font-style: normal;
-  background: linear-gradient(135deg, var(--magenta), var(--morado));
+  background: linear-gradient(100deg, var(--magenta) 20%, var(--morado) 45%, #e05bc8 58%, var(--magenta) 80%);
+  background-size: 250% auto;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  animation: brillo 7s ease-in-out infinite;
 }
 .portada p.bajada { color: var(--suave); font-size: 1.05rem; margin-bottom: 26px; }
 .acciones { display: flex; flex-wrap: wrap; gap: 12px; }
 .nota-acceso { font-size: .82rem; color: var(--suave); margin-top: 14px; }
 
-/* ===== Maqueta del telefono ===== */
+/* ===== El teléfono ===== */
+.escena {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 10px 0;
+}
+.brillo {
+  position: absolute;
+  inset: 6% 8%;
+  background: radial-gradient(closest-side, rgba(181, 23, 158, .30), transparent);
+  filter: blur(24px);
+}
 .telefono {
-  width: 260px;
-  margin: 0 auto;
+  position: relative;
+  width: 270px;
   background: #fff;
   border: 8px solid #2b2b2b;
   border-radius: 30px;
   overflow: hidden;
-  box-shadow: 0 18px 40px rgba(114, 9, 183, .18);
+  box-shadow: 0 18px 40px rgba(114, 9, 183, .20);
+  animation: flotar 6s ease-in-out infinite;
 }
 .tel-header {
   background: linear-gradient(135deg, var(--magenta), var(--morado));
@@ -84,41 +102,130 @@ body { line-height: 1.55; }
 }
 .tel-header strong { font-size: .95rem; display: block; }
 .tel-header span { font-size: .72rem; opacity: .85; }
-.tel-cuerpo { padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--fondo); }
+.tel-cuerpo {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--fondo);
+}
+
+.tel-caja {
+  background: #fff;
+  border-radius: 12px;
+  padding: 11px 12px;
+  border-left: 3px solid var(--morado);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
+  font-size: .74rem;
+}
+.linea { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; }
+.linea span { color: var(--suave); }
+.linea.total {
+  border-top: 1px solid var(--borde);
+  margin-top: 4px;
+  padding-top: 6px;
+  font-size: .82rem;
+}
+.tel-factor {
+  background: #f4e4f0;
+  color: var(--morado);
+  border-radius: 8px;
+  padding: 6px 8px;
+  margin: 8px 0;
+  font-size: .7rem;
+  line-height: 1.4;
+}
+.tel-barra {
+  height: 8px;
+  background: #efe4ec;
+  border-radius: 20px;
+  overflow: hidden;
+}
+.tel-barra i {
+  display: block;
+  height: 100%;
+  width: 38%;
+  background: linear-gradient(90deg, var(--magenta), var(--morado));
+  border-radius: 20px;
+}
+.tel-meta { font-size: .68rem; color: var(--suave); margin-top: 5px; }
+
 .tel-card {
   background: #fff;
   border-radius: 10px;
   padding: 9px 11px;
   border-left: 3px solid var(--magenta);
   box-shadow: 0 1px 3px rgba(0, 0, 0, .06);
-  font-size: .76rem;
+  font-size: .74rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 8px;
 }
-.tel-card.alerta { border-left-color: #e63946; background: #fff5f5; }
-.tel-card small { color: var(--suave); display: block; font-size: .7rem; }
-.tel-pill { background: #f0e6ee; border-radius: 20px; padding: 2px 8px; font-size: .68rem; white-space: nowrap; }
-.tel-pill.rojo { background: #ffd6d6; color: #c1121f; }
+.tel-card small { color: var(--suave); display: block; font-size: .68rem; }
+.tel-card.perdida { border-left-color: var(--alerta-texto); background: #fff0f0; }
+.tel-pill { background: #f0e6ee; border-radius: 20px; padding: 2px 8px; font-size: .66rem; white-space: nowrap; }
+.tel-pill.rojo { background: var(--alerta-fondo); color: var(--alerta-texto); font-weight: 600; }
+
+.tel-ganancia {
+  background: #eef7f4;
+  color: var(--ok-texto);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: .74rem;
+  text-align: center;
+}
+
 .tel-tabs { display: flex; border-top: 1px solid #eee; background: #fff; }
-.tel-tabs span { flex: 1; text-align: center; padding: 9px 2px; font-size: .68rem; color: #999; }
+.tel-tabs span { flex: 1; text-align: center; padding: 9px 2px; font-size: .64rem; color: #999; }
 .tel-tabs span.on { color: var(--magenta); font-weight: 600; border-top: 2px solid var(--magenta); }
+
+/* ----- Secuencia de la caja -----
+   Sin la clase .anima (sin JS o con movimiento reducido) todo se ve en su
+   estado final. Con .anima, js/landing.js alterna .play: al ponerla, cada
+   pieza aparece con su propio retraso (--d); al quitarla, todo se esconde de
+   una vez para volver a empezar. */
+.escena .a {
+  transition: opacity .5s ease, transform .5s ease;
+  transition-delay: var(--d, 0s);
+}
+.escena.anima:not(.play) .a {
+  opacity: 0;
+  transform: translateY(8px);
+  transition-duration: .3s;
+  transition-delay: 0s;
+}
+.escena.anima:not(.play) .tel-ganancia { transform: scale(.9); }
+
+.escena .tel-barra i { transition: width 1.4s cubic-bezier(.2, .8, .2, 1) 1.7s; }
+.escena.anima:not(.play) .tel-barra i { width: 0; transition: width .3s; }
+
+/* El aviso de pérdida late dos veces cuando aparece: es lo que hay que ver. */
+.escena.play .perdida .tel-pill { animation: latido .5s ease 4s 2; }
 
 /* ===== Secciones ===== */
 section.bloque { padding: 44px 0; }
 .bloque h2 { font-size: 1.45rem; letter-spacing: -.01em; margin-bottom: 8px; }
 .bloque .intro { color: var(--suave); margin-bottom: 26px; max-width: 620px; }
 
-.cita {
+.ejemplo {
   background: #fff;
-  border-left: 4px solid var(--magenta);
+  border-left: 4px solid var(--alerta-texto);
   border-radius: 0 14px 14px 0;
   padding: 18px 20px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, .06);
-  font-size: 1.02rem;
+  max-width: 620px;
 }
-.cita footer { color: var(--suave); font-size: .82rem; margin-top: 8px; }
+.ejemplo-etq {
+  display: inline-block;
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--alerta-texto);
+  margin-bottom: 6px;
+}
+.ejemplo p { font-size: 1.02rem; }
 
 .tarjetas { display: grid; grid-template-columns: 1fr; gap: 16px; }
 .tarjeta {
@@ -146,7 +253,28 @@ section.bloque { padding: 44px 0; }
   padding: 30px 26px;
 }
 .cliente h2 { color: #fff; }
-.cliente p { opacity: .9; max-width: 560px; }
+.cliente p { opacity: .92; max-width: 620px; }
+
+.pasos { list-style: none; display: grid; gap: 10px; margin-top: 20px; }
+.pasos li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: rgba(255, 255, 255, .13);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font-size: .92rem;
+}
+.pasos b {
+  flex-shrink: 0;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: #fff;
+  color: var(--morado);
+  display: grid;
+  place-items: center;
+  font-size: .85rem;
+}
 
 /* ===== Llamado final ===== */
 .final { text-align: center; padding: 52px 0 60px; }
@@ -160,12 +288,48 @@ footer.pie {
   font-size: .85rem;
   text-align: center;
 }
-footer.pie a { color: var(--morado); }
 
+/* ===== Aparición al hacer scroll =====
+   html.revelado-activo lo pone js/landing.js solo si hay movimiento permitido.
+   Esconder es instantáneo; aparecer es lo único que se anima. */
+html.revelado-activo .revelar { opacity: 0; transform: translateY(18px); }
+html.revelado-activo .revelar.visible {
+  opacity: 1;
+  transform: none;
+  transition: opacity .7s ease, transform .7s cubic-bezier(.2, .7, .2, 1);
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+
+/* ===== Animaciones ===== */
+@keyframes flotar {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+@keyframes brillo {
+  0%, 100% { background-position: 0% 50%; }
+  50%      { background-position: 100% 50%; }
+}
+@keyframes latido {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.14); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .telefono, .portada h1 em, .escena.play .perdida .tel-pill { animation: none; }
+}
+
+/* ===== Pantallas grandes ===== */
+@media (min-width: 640px) {
+  .tarjetas { grid-template-columns: repeat(2, 1fr); }
+}
 @media (min-width: 820px) {
   .portada { padding: 76px 0 56px; }
   .portada .contenedor { grid-template-columns: 1.1fr .9fr; gap: 48px; }
   .portada h1 { font-size: 2.9rem; }
-  .tarjetas { grid-template-columns: repeat(3, 1fr); }
   .bloque h2 { font-size: 1.7rem; }
+  .pasos { grid-template-columns: repeat(3, 1fr); }
+}
+@media (min-width: 1000px) {
+  .tarjetas { grid-template-columns: repeat(4, 1fr); }
 }

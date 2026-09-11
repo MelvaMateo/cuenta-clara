@@ -1,16 +1,16 @@
 -- Cuenta Clara — esquema.
 -- Correr una sola vez en: Supabase → SQL Editor → New query → Run.
 --
--- El negocio: Yaleni trae cajas desde USA (parte en lotes surtidos sin precios
+-- El negocio: quien emprende trae cajas desde USA (parte en lotes surtidos sin precios
 -- por producto, parte comprada en tiendas con recibo), paga flete y aduana, y
--- revende en su salón. Hoy le pone precio sin tomar en cuenta lo que costó
+-- las revende. Suele ponerles precio sin tomar en cuenta lo que costó
 -- traerlo, así que no sabe si la caja le deja ganancia.
 --
 -- La app resuelve eso repartiendo el costo REAL de la caja entre sus productos:
 --   · lo comprado en tienda conserva su costo exacto
 --   · lo del lote reparte el costo del lote según el valor estimado de cada cosa
 --   · flete y aduana se reparten entre todo, proporcional al valor
--- Nada se inventa: el total siempre queda anclado a lo que ella pagó.
+-- Nada se inventa: el total siempre queda anclado a lo que se pagó.
 --
 -- Cada fila lleva owner_id y RLS deja ver solo lo propio.
 

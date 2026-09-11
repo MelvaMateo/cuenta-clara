@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#b5179e">
-  <meta name="description" content="Cuenta Clara: lleva el inventario y los fiados de tu salon de belleza sin cuaderno. Sabe que hay en stock, quien te debe y cuanto.">
+  <meta name="description" content="Cuenta Clara: sabé si cada caja que traés de USA te deja ganancia. Reparte el flete y la aduana entre tus productos, te dice a cuánto vender cada uno y lleva tu stock y tus fiados.">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
-  <title>Cuenta Clara — Inventario y fiados para tu salón</title>
+  <title>Cuenta Clara — ¿Tu caja te dejó ganancia?</title>
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/landing.css">
 </head>
@@ -24,8 +24,8 @@
 
   <header class="portada">
     <div class="contenedor">
-      <div>
-        <span class="etiqueta">YCC Beauty Studio · Choloma, Cortés</span>
+      <div class="portada-texto">
+        <span class="etiqueta">Para quienes traen cajas desde USA y revenden</span>
         <h1>¿Esta caja <em>te dejó ganancia</em>?</h1>
         <p class="bajada">
           Ponerle precio a lo que traés de USA sin contar el flete y la aduana
@@ -36,36 +36,44 @@
           <a class="btn" href="login.html">Entrar a la app</a>
           <a class="btn btn-fantasma" href="#funciones">Ver qué hace</a>
         </div>
-        <p class="nota-acceso">Prototipo del capstone de Ingeniería de Software I, hecho para YCC Beauty Studio.</p>
+        <p class="nota-acceso">Prototipo del capstone de Ingeniería de Software I.</p>
       </div>
 
-      <div class="telefono" aria-hidden="true">
-        <div class="tel-header">
-          <strong>Cuenta Clara</strong>
-          <span>YCC Beauty Studio</span>
-        </div>
-        <div class="tel-cuerpo">
-          <div class="tel-card">
-            <div><strong>Tinte rubio ceniza</strong><small>Costo L 180 · Precio L 320</small></div>
-            <span class="tel-pill">6 en stock</span>
+      <!-- La caja se va armando: costos, barra de recuperación, un producto
+           vendido con pérdida y la ganancia. Ver js/landing.js. -->
+      <div class="escena" aria-hidden="true">
+        <div class="brillo"></div>
+        <div class="telefono">
+          <div class="tel-header">
+            <strong>Cuenta Clara</strong>
+            <span>Caja agosto</span>
           </div>
-          <div class="tel-card alerta">
-            <div><strong>Shampoo matizador</strong><small>Costo L 210 · Precio L 380</small></div>
-            <span class="tel-pill rojo">1 · bajo</span>
+
+          <div class="tel-cuerpo">
+            <div class="tel-caja">
+              <div class="linea a" style="--d:.2s"><span>Lote surtido</span><b>$200</b></div>
+              <div class="linea a" style="--d:.45s"><span>Compras en tienda</span><b>$190</b></div>
+              <div class="linea a" style="--d:.7s"><span>Flete + aduana</span><b>$95</b></div>
+              <div class="linea total a" style="--d:1s"><span>Invertiste</span><b>L 11,955</b></div>
+              <div class="tel-factor a" style="--d:1.35s">Cada $1 de producto te llega costando <b>$1.24</b></div>
+              <div class="tel-barra"><i></i></div>
+              <div class="tel-meta a" style="--d:2.9s">38% recuperado · te faltan L 7,395</div>
+            </div>
+
+            <div class="tel-card perdida a" style="--d:3.4s">
+              <div><strong>Organizador acrílico</strong><small>Cuesta L 161 · lo vendés a L 150</small></div>
+              <span class="tel-pill rojo">⚠ pérdida</span>
+            </div>
+
+            <div class="tel-ganancia a" style="--d:4.1s">Si vendés todo: <b>ganás L 4,555</b></div>
           </div>
-          <div class="tel-card">
-            <div><strong>Keratina 500 ml</strong><small>Costo L 340 · Precio L 590</small></div>
-            <span class="tel-pill">4 en stock</span>
+
+          <div class="tel-tabs">
+            <span class="on">Cajas</span>
+            <span>Stock</span>
+            <span>Fiados</span>
+            <span>Resumen</span>
           </div>
-          <div class="tel-card">
-            <div><strong>Karla M.</strong><small>Fiado del 12 de junio</small></div>
-            <span class="tel-pill rojo">L 450.00</span>
-          </div>
-        </div>
-        <div class="tel-tabs">
-          <span class="on">Inventario</span>
-          <span>Fiados</span>
-          <span>Resumen</span>
         </div>
       </div>
     </div>
@@ -73,40 +81,45 @@
 
   <section class="bloque">
     <div class="contenedor">
-      <h2>El problema</h2>
-      <p class="intro">
-        Hoy todo vive en un cuaderno: solo el nombre y la cantidad de cada fiado.
-        No se puede buscar quién debe, no se suman los totales y no hay forma de
-        saber si una caja importada dejó ganancia.
+      <h2 class="revelar">El problema</h2>
+      <p class="intro revelar" style="--i:1">
+        Traés la caja, le ponés precio a cada cosa a ojo y vendés. Pero lo que
+        pagaste en USA no es lo que te costó: falta sumar el flete, la aduana y
+        lo que diste por el lote. Si no lo contás, podés estar vendiendo con
+        pérdida sin enterarte nunca.
       </p>
-      <blockquote class="cita">
-        “Imaginate que no es un negocio grande, y solo le fío a pocas personas.”
-        <footer>— Yaleni, dueña de YCC Beauty Studio (entrevista, 6 de junio de 2026)</footer>
-      </blockquote>
+      <div class="ejemplo revelar" style="--i:2">
+        <span class="ejemplo-etq">Un ejemplo</span>
+        <p>
+          Un organizador que vendés a <b>L 150</b> puede estarte costando
+          <b>L 161</b> una vez que sumás lo que pagaste por traerlo.
+          Cada vez que lo vendés, perdés.
+        </p>
+      </div>
     </div>
   </section>
 
   <section class="bloque" id="funciones">
     <div class="contenedor">
-      <h2>Qué hace</h2>
-      <p class="intro">Cuatro pantallas, nada más. Lo mínimo para dejar el cuaderno y dejar de adivinar precios.</p>
+      <h2 class="revelar">Qué hace</h2>
+      <p class="intro revelar" style="--i:1">Cuatro pantallas, nada más. Lo mínimo para dejar el cuaderno y dejar de adivinar precios.</p>
       <div class="tarjetas">
-        <article class="tarjeta">
+        <article class="tarjeta revelar" style="--i:0">
           <div class="icono">📦</div>
           <h3>Cajas</h3>
           <p>Cargá lo que pagaste por el lote, el flete y la aduana. La app reparte ese costo entre los productos y te dice cuánto te falta vender para recuperar la caja.</p>
         </article>
-        <article class="tarjeta">
+        <article class="tarjeta revelar" style="--i:1">
           <div class="icono">🏷️</div>
           <h3>Precio con ganancia</h3>
           <p>Al cargar un producto te muestra lo que de verdad te costó puesto en Honduras y a cuánto venderlo. Si le ponés un precio por debajo del costo, te avisa.</p>
         </article>
-        <article class="tarjeta">
+        <article class="tarjeta revelar" style="--i:2">
           <div class="icono">🧾</div>
           <h3>Fiados</h3>
-          <p>Anotá quién llevó qué y por cuánto. Buscá a la clienta por nombre, registrá sus abonos y mirá el saldo que aún te debe.</p>
+          <p>Anotá quién se llevó qué y por cuánto. Buscá por nombre, registrá los abonos y mirá cuánto te deben todavía.</p>
         </article>
-        <article class="tarjeta">
+        <article class="tarjeta revelar" style="--i:3">
           <div class="icono">🔔</div>
           <h3>Stock con alerta</h3>
           <p>Cada producto con su foto, tomada desde el celular. Cuando algo esté por agotarse, aparece resaltado para volver a pedirlo en la próxima caja.</p>
@@ -117,32 +130,35 @@
 
   <section class="bloque">
     <div class="contenedor">
-      <div class="cliente">
-        <h2>Hecha para un negocio real</h2>
+      <div class="cliente revelar">
+        <h2>Hecha para quien emprende</h2>
         <p>
-          Yaleni trae cajas desde USA: parte en lotes surtidos que llegan sin
-          precios y parte comprada en tiendas. Cuenta Clara no le pide datos que
-          no tiene — con lo que pagó por la caja y una estimación de cuánto vale
-          cada cosa le alcanza para saber si le está dejando ganancia.
+          Lotes surtidos que llegan sin precios, compras en tiendas con recibo,
+          o las dos cosas en la misma caja. Cuenta Clara no te pide datos que no
+          tenés: con lo que pagaste y una estimación de cuánto vale cada cosa,
+          le alcanza para decirte si estás ganando.
         </p>
+        <ol class="pasos">
+          <li><b>1</b><span>Cargás lo que pagaste por la caja: lote, flete y aduana.</span></li>
+          <li><b>2</b><span>Cargás cada producto con su foto y cuánto creés que vale.</span></li>
+          <li><b>3</b><span>La app te dice cuánto te costó y a cuánto venderlo.</span></li>
+        </ol>
       </div>
     </div>
   </section>
 
   <section class="final">
-    <div class="contenedor">
+    <div class="contenedor revelar">
       <h2>Empezá a llevar la cuenta clara</h2>
-      <p>Entrá con tu usuario y registrá tu primer producto en menos de un minuto.</p>
+      <p>Registrá tu primera caja y sabé en minutos si te está dejando ganancia.</p>
       <a class="btn" href="login.html">Iniciar sesión</a>
     </div>
   </section>
 
   <footer class="pie">
-    <div class="contenedor">
-      Cuenta Clara · Capstone de Ingeniería de Software I ·
-      <a href="PLAN.md">Plan y diseño</a>
-    </div>
+    <div class="contenedor">Cuenta Clara · Capstone de Ingeniería de Software I</div>
   </footer>
 
+  <script src="js/landing.js"></script>
 </body>
 </html>

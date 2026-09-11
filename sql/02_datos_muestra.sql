@@ -1,7 +1,7 @@
 -- Cuenta Clara — datos de muestra para la demostración.
 -- Correr después de 01_esquema.sql, en: Supabase → SQL Editor → Run.
 --
--- Una caja MIXTA, como las que trae Yaleni: parte lote surtido (sin precios
+-- Una caja MIXTA, como las que suelen traerse de USA: parte lote surtido (sin precios
 -- por producto, valores estimados) y parte comprada en tiendas en USA (costo
 -- real, con recibo). Los números son inventados pero plausibles; cambiá los
 -- VALUES por los reales cuando los tengas.
@@ -45,7 +45,7 @@ begin
     (v_owner, v_caja, 'Set CeraVe limpiador + crema', 'tienda', 25.00, 4, 3, 2, 1050.00);
 
   -- --------------------------------------------- del lote (valor estimado)
-  -- Ella no sabe cuánto costó cada cosa: estima cuánto vale. Solo importan
+  -- No se sabe cuánto costó cada cosa: se estima cuánto vale. Solo importan
   -- las proporciones — el total queda anclado a los $200 que sí pagó.
   insert into public.productos
     (owner_id, caja_id, nombre, origen, valor_usd, cantidad, stock, stock_minimo, precio) values

@@ -344,7 +344,7 @@ async function addFiado(e) {
   const clienta = f.clienta.value.trim();
   const monto = parseFloat(f.monto.value);
   if (!clienta || isNaN(monto) || monto <= 0) {
-    avisar('Falta la clienta o un monto válido.');
+    avisar('Falta el nombre o un monto válido.');
     return;
   }
   const boton = f.querySelector('button[type="submit"]');
@@ -437,7 +437,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   sesion = await exigirSesion();
   if (!sesion) return;
 
-  document.getElementById('saludo').textContent = `Hola, ${Sesion.nombreDe(sesion)} · YCC Beauty Studio`;
+  document.getElementById('saludo').textContent = `Hola, ${Sesion.nombreDe(sesion)}`;
   document.getElementById('formCaja').addEventListener('submit', addCaja);
   document.getElementById('formProducto').addEventListener('submit', addProducto);
   document.getElementById('formFiado').addEventListener('submit', addFiado);
