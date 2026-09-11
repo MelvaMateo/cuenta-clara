@@ -1,20 +1,20 @@
 # Cuenta Clara — Plan y diseño
 
-Producto de software para que pequeños salones de belleza lleven su inventario y sus fiados sin cuaderno. Capstone de **Ingeniería de Software I**. Cliente real y piloto: **YCC Beauty Studio** (Choloma, Cortés).
+Producto de software para que pequeños salones de belleza lleven su inventario y sus fiados sin cuaderno. Capstone de **Ingeniería de Software I**. Cliente real y piloto: un pequeño salón de belleza en Honduras (el nombre del negocio y de su dueña se omiten para proteger su privacidad).
 
 ---
 
 ## 1. Caso real, contexto y problema
 
-**Cliente y cómo la conocí:** Yaleni Lineth Ventura Sosa, dueña de YCC Beauty Studio, un pequeño salón de belleza que, además de los servicios, importa cajas de productos de belleza y de hogar desde Estados Unidos para revenderlos en el local y por redes sociales. La conocí cuando realizaba mi práctica profesional del colegio.
+**Cliente y cómo la conocí:** la dueña de un pequeño salón de belleza que, además de los servicios, importa cajas de productos de belleza y de hogar desde Estados Unidos para revenderlos en el local y por redes sociales. La conocí cuando realizaba mi práctica profesional del colegio.
 
-**Ubicación:** Colonia Armando Gale #2 (entrada La San Miguel), frente a la Escuela Marcia Carolina Gale, Choloma, Cortés.
+**Ubicación:** Honduras (la dirección se omite por privacidad).
 
 **Fecha de la entrevista:** sábado 6 de junio de 2026.
 
 **Lo que me dijo (textual):** *"Imaginate que no es un negocio grande, y solo le fío a pocas personas."* Esa frase es justamente la que revela el problema: como lo ve pequeño y son pocas clientas, nunca ha sentido la necesidad de llevar un registro, y por eso hoy no tiene forma de saber con certeza cuánto le deben ni si cada caja que trae le deja ganancia.
 
-**Usuarios primarios y secundarios:** La usuaria primaria es Yaleni, que trabaja sola: atiende el salón, vende y registra cada venta y cada fiado. Las usuarias secundarias son las clientas a las que les fía y las que le compran por redes, cuyo saldo y pedidos hoy solo viven en su cuaderno.
+**Usuarios primarios y secundarios:** La usuaria primaria es la dueña, que trabaja sola: atiende el salón, vende y registra cada venta y cada fiado. Las usuarias secundarias son las clientas a las que les fía y las que le compran por redes, cuyo saldo y pedidos hoy solo viven en su cuaderno.
 
 **Cómo resuelve hoy el problema y por qué falla:** Para las citas ya usa una app, pero para el inventario y los fiados no tiene nada: solo apunta en un cuaderno el nombre de la persona y la cantidad. Eso falla porque el cuaderno no se puede buscar, no suma totales, se moja o se pierde, y como no compara lo que le cuesta cada caja contra lo que vende, no sabe qué productos le dejan ganancia ni cuándo se le está acabando algo.
 
@@ -60,7 +60,7 @@ Producto de software para que pequeños salones de belleza lleven su inventario 
 **Capas (3 capas):**
 
 ```
-Celular de Yaleni
+Celular de la dueña
    | HTTPS
    v
 CLIENTE: PWA  (inventario, ventas, fiados, reportes)
@@ -74,7 +74,7 @@ BASE DE DATOS: PostgreSQL  (datos relacionales)
 
 **Tecnologías y por qué:**
 
-- **PWA (HTML/CSS/JS):** Yaleni trabaja desde su celular Android. Una PWA se abre con un link y se "agrega a inicio" sin pasar por la tienda, pesa poco y permite registrar sin internet. Evita el costo de una app nativa.
+- **PWA (HTML/CSS/JS):** la dueña trabaja desde su celular Android. Una PWA se abre con un link y se "agrega a inicio" sin pasar por la tienda, pesa poco y permite registrar sin internet. Evita el costo de una app nativa.
 - **Supabase (BaaS):** ella trabaja sola y el desarrollo es de una persona; no conviene mantener un servidor propio. Trae autenticación, API automática, respaldos y seguridad por fila, con un plan gratis que cubre el negocio.
 - **PostgreSQL:** los datos son relacionales (clientas, productos, cajas, ventas, abonos).
 - **Vercel:** despliega la PWA automáticamente desde GitHub con HTTPS gratis.
@@ -106,7 +106,7 @@ BASE DE DATOS: PostgreSQL  (datos relacionales)
 - **Unitarias:** lógica de cálculo — total de la venta, saldo del fiado (total − abonos), margen y descuento de stock.
 - **Integración:** que guarde/lea bien en Supabase (registrar venta descuenta stock; un abono baja el saldo).
 - **E2E:** flujo completo — registrar venta fiada → verla en "quién debe" → abonar → ver saldo actualizado.
-- **Manual:** prueba real con Yaleni en su celular (registrar una venta en menos de 10 s).
+- **Manual:** prueba real con la dueña en su celular (registrar una venta en menos de 10 s).
 
 **Definition of Done:** pasa el 100% de sus pruebas unitarias; tiene ≥1 escenario E2E del camino feliz; pasó 1 prueba manual con usuario real; valida entradas y muestra error claro; está desplegada en staging.
 
@@ -137,13 +137,13 @@ BASE DE DATOS: PostgreSQL  (datos relacionales)
 
 **Hipótesis:**
 
-- **H1 (la más riesgosa — adopción):** Yaleni registrará la mayoría de sus ventas y fiados en la app si el flujo toma menos de 10 segundos. Es la clave, porque ella misma siente que no lo necesita.
+- **H1 (la más riesgosa — adopción):** La dueña registrará la mayoría de sus ventas y fiados en la app si el flujo toma menos de 10 segundos. Es la clave, porque ella misma siente que no lo necesita.
 - **H2 (fiados):** sabrá al instante quién le debe y cuánto, y dejará de perder fiados por olvido.
 - **H3 (margen):** sabrá qué producto deja más ganancia y cuándo reponer.
 
 **Métricas:** % de ventas/fiados registrados en la app vs. cuaderno; tiempo por registro; veces que consulta "quién me debe"; total por cobrar real vs. lo que calculaba de memoria.
 
-**Lo que se probó (piloto de 10 días, del domingo 14 al miércoles 24 de junio de 2026):** piloto real con Yaleni; cargamos juntas el inventario inicial y ella registró sus ventas y fiados a diario. **Resultado observado:** la mayor dificultad fue que empezó a usar la app con la caja ya abierta y producto ya vendido; al no cargar el inventario y los costos desde que llegó la caja, no pudo saber con certeza si le dejó ganancia. **Lección:** para medir bien el margen, la app debe usarse desde que se recibe la caja. Aun así, el piloto confirmó el problema real: hoy no tiene cómo conocer su ganancia.
+**Lo que se probó (piloto de 10 días, del domingo 14 al miércoles 24 de junio de 2026):** piloto real con la dueña; cargamos juntas el inventario inicial y ella registró sus ventas y fiados a diario. **Resultado observado:** la mayor dificultad fue que empezó a usar la app con la caja ya abierta y producto ya vendido; al no cargar el inventario y los costos desde que llegó la caja, no pudo saber con certeza si le dejó ganancia. **Lección:** para medir bien el margen, la app debe usarse desde que se recibe la caja. Aun así, el piloto confirmó el problema real: hoy no tiene cómo conocer su ganancia.
 
 **Continuación planificada:** a los 15 días, arrancar con una caja nueva desde cero y dejarla sola; a los 30 días, revisar si bajaron las pérdidas en fiados y si usó el reporte de margen.
 
