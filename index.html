@@ -7,6 +7,9 @@
   <meta name="description" content="Cuenta Clara: sabé si cada caja que traés de USA te deja ganancia. Reparte el flete y la aduana entre tus productos, te dice a cuánto vender cada uno y lleva tu stock y tus fiados.">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <title>Cuenta Clara — ¿Tu caja te dejó ganancia?</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/landing.css">
 </head>
@@ -14,18 +17,23 @@
 
   <nav class="nav">
     <div class="contenedor">
-      <div class="marca">
-        <img src="icon.svg" alt="">
-        Cuenta Clara
+      <a class="marca" href="#inicio" aria-label="Cuenta Clara, ir al inicio">
+        <img class="marca-icono" src="icon.svg" alt="">
+        <span class="marca-texto">Cuenta<b>Clara</b></span>
+      </a>
+      <div class="nav-links">
+        <a href="#como">Cómo funciona</a>
+        <a href="#simulador">Hacé la cuenta</a>
       </div>
       <a class="btn" href="login.html">Iniciar sesión</a>
     </div>
   </nav>
 
-  <header class="portada">
+  <!-- ============================== Portada ============================== -->
+  <header class="portada" id="inicio">
     <div class="contenedor">
       <div class="portada-texto">
-        <span class="etiqueta">Para quienes traen cajas desde USA y revenden</span>
+        <span class="etiqueta"><i class="punto"></i>Para quienes traen cajas desde USA y revenden</span>
         <h1>¿Esta caja <em>te dejó ganancia</em>?</h1>
         <p class="bajada">
           Ponerle precio a lo que traés de USA sin contar el flete y la aduana
@@ -33,14 +41,82 @@
           caja y te dice a cuánto vender cada cosa para ganar.
         </p>
         <div class="acciones">
-          <a class="btn" href="login.html">Entrar a la app</a>
-          <a class="btn btn-fantasma" href="#funciones">Ver qué hace</a>
+          <a class="btn btn-grande" href="login.html">Entrar a la app</a>
+          <a class="btn btn-fantasma btn-grande" href="#simulador">Hacé la cuenta <span aria-hidden="true">→</span></a>
         </div>
-        <p class="nota-acceso">Prototipo del capstone de Ingeniería de Software I.</p>
+        <ul class="garantias">
+          <li>Sin instalar nada</li>
+          <li>Pensada para el celular</li>
+          <li>En lempiras</li>
+        </ul>
       </div>
 
-      <!-- La caja se va armando: costos, barra de recuperación, un producto
-           vendido con pérdida y la ganancia. Ver js/landing.js. -->
+      <!-- La caja llega cerrada, se abre y salen los productos con el precio
+           al que conviene venderlos. Sin JavaScript se ve ya abierta.
+           Ver js/landing.js. -->
+      <div class="caja-escena abierta" id="cajaEscena" aria-hidden="true">
+        <div class="caja-sombra"></div>
+        <div class="caja-flota">
+          <div class="caja3d">
+            <div class="cara frente">
+              <div class="etiqueta-envio">
+                <span class="ruta">USA <b>✈</b> HN</span>
+                <span class="codigo"></span>
+              </div>
+            </div>
+            <div class="cara atras"></div>
+            <div class="cara izq"></div>
+            <div class="cara der"></div>
+            <div class="cara fondo"></div>
+            <div class="tapas">
+              <div class="tapa tapa-izq"></div>
+              <div class="tapa tapa-der"></div>
+              <div class="tapa tapa-atras"></div>
+              <div class="tapa tapa-frente"></div>
+            </div>
+          </div>
+
+          <div class="productos">
+            <div class="producto" style="--x:-160;--y:-40;--i:0"><span class="emoji">👜</span><span class="precio">L 847</span></div>
+            <div class="producto" style="--x:-95;--y:-140;--i:1"><span class="emoji">💄</span><span class="precio">L 169</span></div>
+            <div class="producto" style="--x:0;--y:-185;--i:2"><span class="emoji">🧴</span><span class="precio">L 339</span></div>
+            <div class="producto mala" style="--x:95;--y:-140;--i:3"><span class="emoji">🗂️</span><span class="precio">L 150 ⚠</span></div>
+            <div class="producto" style="--x:160;--y:-40;--i:4"><span class="emoji">🪮</span><span class="precio">L 198</span></div>
+          </div>
+        </div>
+        <p class="caja-hint">Tocá la caja para abrirla de nuevo</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- ============================== Problema ============================== -->
+  <section class="bloque">
+    <div class="contenedor dos-col">
+      <div>
+        <h2 class="revelar">El problema</h2>
+        <p class="intro revelar" style="--i:1">
+          Traés la caja, le ponés precio a cada cosa a ojo y vendés. Pero lo que
+          pagaste en USA no es lo que te costó: falta sumar el flete, la aduana y
+          lo que diste por el lote. Si no lo contás, podés estar vendiendo con
+          pérdida sin enterarte nunca.
+        </p>
+      </div>
+      <div class="ejemplo revelar" style="--i:2">
+        <span class="ejemplo-etq">Un ejemplo</span>
+        <p>
+          Un organizador que vendés a <b>L 150</b> puede estarte costando
+          <b>L 161</b> una vez que sumás lo que pagaste por traerlo.
+        </p>
+        <p class="ejemplo-pie">Cada vez que lo vendés, perdés L 11.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== Cómo funciona ============================== -->
+  <section class="bloque como" id="como">
+    <div class="contenedor dos-col">
+      <!-- La caja se va armando en el celular: costos, barra de recuperación,
+           un producto vendido con pérdida y la ganancia. -->
       <div class="escena" aria-hidden="true">
         <div class="brillo"></div>
         <div class="telefono">
@@ -76,29 +152,85 @@
           </div>
         </div>
       </div>
-    </div>
-  </header>
 
-  <section class="bloque">
-    <div class="contenedor">
-      <h2 class="revelar">El problema</h2>
-      <p class="intro revelar" style="--i:1">
-        Traés la caja, le ponés precio a cada cosa a ojo y vendés. Pero lo que
-        pagaste en USA no es lo que te costó: falta sumar el flete, la aduana y
-        lo que diste por el lote. Si no lo contás, podés estar vendiendo con
-        pérdida sin enterarte nunca.
-      </p>
-      <div class="ejemplo revelar" style="--i:2">
-        <span class="ejemplo-etq">Un ejemplo</span>
-        <p>
-          Un organizador que vendés a <b>L 150</b> puede estarte costando
-          <b>L 161</b> una vez que sumás lo que pagaste por traerlo.
-          Cada vez que lo vendés, perdés.
+      <div>
+        <h2 class="revelar">Cómo funciona</h2>
+        <p class="intro revelar" style="--i:1">
+          Lotes surtidos que llegan sin precios, compras en tiendas con recibo, o
+          las dos cosas en la misma caja. No te pide datos que no tenés.
         </p>
+        <ol class="pasos">
+          <li class="revelar" style="--i:2">
+            <b>1</b>
+            <div><strong>Cargás la caja</strong><span>Lo que pagaste por el lote, el flete, la aduana y el tipo de cambio.</span></div>
+          </li>
+          <li class="revelar" style="--i:3">
+            <b>2</b>
+            <div><strong>Cargás los productos</strong><span>Con una foto y cuánto creés que vale cada uno. Si tenés el recibo, el costo exacto.</span></div>
+          </li>
+          <li class="revelar" style="--i:4">
+            <b>3</b>
+            <div><strong>Sabés si ganás</strong><span>Cuánto te costó cada cosa, a cuánto venderla y cuánto te falta para recuperar la caja.</span></div>
+          </li>
+        </ol>
       </div>
     </div>
   </section>
 
+  <!-- ============================== Simulador ============================== -->
+  <section class="bloque" id="simulador">
+    <div class="contenedor">
+      <h2 class="revelar">Hacé la cuenta</h2>
+      <p class="intro revelar" style="--i:1">Mové los controles y mirá cuánto te cuesta de verdad un producto, y a cuánto conviene venderlo.</p>
+
+      <div class="simulador revelar" style="--i:2">
+        <form class="sim-controles" id="sim">
+          <label class="sim-campo">
+            <span class="sim-nombre">Lo pagaste en USA <output id="oUsd">$20</output></span>
+            <input type="range" id="sUsd" min="1" max="100" step="1" value="20">
+          </label>
+          <label class="sim-campo">
+            <span class="sim-nombre">Flete, aduana y otros gastos <output id="oGastos">24%</output></span>
+            <input type="range" id="sGastos" min="0" max="80" step="1" value="24">
+            <small>Lo que te suma traer la caja, sobre el valor de la mercadería.</small>
+          </label>
+          <label class="sim-campo">
+            <span class="sim-nombre">Ganancia que querés <output id="oMargen">40%</output></span>
+            <input type="range" id="sMargen" min="0" max="100" step="5" value="40">
+          </label>
+          <div class="sim-fila">
+            <label class="sim-mini">Tipo de cambio
+              <input type="number" id="sTc" value="24.65" step="0.01" min="1" inputmode="decimal">
+            </label>
+            <label class="sim-mini">A ojo lo venderías a (L)
+              <input type="number" id="sOjo" value="550" step="10" min="0" inputmode="decimal">
+            </label>
+          </div>
+        </form>
+
+        <div class="sim-resultado" aria-live="polite">
+          <p class="sim-etq">Vendelo a</p>
+          <p class="sim-precio" id="rPrecio">L 856</p>
+          <p class="sim-costo">Te cuesta <b id="rCosto">L 611</b> puesto en Honduras</p>
+
+          <div class="sim-barra">
+            <i class="seg seg-usa" id="bUsa" style="width:57.6%"></i>
+            <i class="seg seg-traer" id="bTraer" style="width:13.8%"></i>
+            <i class="seg seg-gan" id="bGan" style="width:28.6%"></i>
+          </div>
+          <ul class="sim-leyenda">
+            <li><i class="dot usa"></i>Producto <b id="lUsa">L 493</b></li>
+            <li><i class="dot traer"></i>Traerlo <b id="lTraer">L 118</b></li>
+            <li><i class="dot gan"></i>Tu ganancia <b id="lGan">L 245</b></li>
+          </ul>
+
+          <div class="sim-veredicto visible mala" id="rVeredicto">A L 550 estarías <b>perdiendo L 61</b> en cada uno.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== Qué hace ============================== -->
   <section class="bloque" id="funciones">
     <div class="contenedor">
       <h2 class="revelar">Qué hace</h2>
@@ -128,35 +260,25 @@
     </div>
   </section>
 
-  <section class="bloque">
+  <!-- ============================== Cierre ============================== -->
+  <section class="final">
     <div class="contenedor">
-      <div class="cliente revelar">
-        <h2>Hecha para quien emprende</h2>
-        <p>
-          Lotes surtidos que llegan sin precios, compras en tiendas con recibo,
-          o las dos cosas en la misma caja. Cuenta Clara no te pide datos que no
-          tenés: con lo que pagaste y una estimación de cuánto vale cada cosa,
-          le alcanza para decirte si estás ganando.
-        </p>
-        <ol class="pasos">
-          <li><b>1</b><span>Cargás lo que pagaste por la caja: lote, flete y aduana.</span></li>
-          <li><b>2</b><span>Cargás cada producto con su foto y cuánto creés que vale.</span></li>
-          <li><b>3</b><span>La app te dice cuánto te costó y a cuánto venderlo.</span></li>
-        </ol>
+      <div class="final-caja revelar">
+        <h2>Tu próxima caja, con la cuenta clara</h2>
+        <p>Registrala desde que llega y sabé en minutos si te está dejando ganancia.</p>
+        <a class="btn btn-blanco btn-grande" href="login.html">Entrar a la app</a>
       </div>
     </div>
   </section>
 
-  <section class="final">
-    <div class="contenedor revelar">
-      <h2>Empezá a llevar la cuenta clara</h2>
-      <p>Registrá tu primera caja y sabé en minutos si te está dejando ganancia.</p>
-      <a class="btn" href="login.html">Iniciar sesión</a>
-    </div>
-  </section>
-
   <footer class="pie">
-    <div class="contenedor">Cuenta Clara · Capstone de Ingeniería de Software I</div>
+    <div class="contenedor">
+      <a class="marca marca-chica" href="#inicio" aria-label="Cuenta Clara, volver arriba">
+        <img class="marca-icono" src="icon.svg" alt="">
+        <span class="marca-texto">Cuenta<b>Clara</b></span>
+      </a>
+      <span>Capstone de Ingeniería de Software I</span>
+    </div>
   </footer>
 
   <script src="js/landing.js"></script>

@@ -1,4 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
-  <rect width="192" height="192" rx="40" fill="#b5179e"/>
-  <text x="96" y="128" font-family="system-ui, sans-serif" font-size="92" font-weight="700" fill="#fff" text-anchor="middle">CC</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Cuenta Clara: una caja de envío cerrada con cinta, sobre el degradado de la marca. -->
+  <defs>
+    <linearGradient id="fondo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c2189f"/>
+      <stop offset="1" stop-color="#6a0dad"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="16" fill="url(#fondo)"/>
+  <!-- tapa, cara izquierda y cara derecha de la caja -->
+  <path d="M32 12.5 L50.5 22.5 L32 32.5 L13.5 22.5 Z" fill="#fff" fill-opacity=".62"/>
+  <path d="M13.5 22.5 L32 32.5 L32 52.5 L13.5 42.5 Z" fill="#fff"/>
+  <path d="M50.5 22.5 L32 32.5 L32 52.5 L50.5 42.5 Z" fill="#fff" fill-opacity=".8"/>
+  <!-- cinta: cruza la tapa y baja por la cara derecha -->
+  <path d="M22.75 17.5 L41.25 27.5 L41.25 47.5" fill="none" stroke="#b5179e" stroke-width="3.4" stroke-linejoin="round"/>
 </svg>
