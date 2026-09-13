@@ -303,3 +303,42 @@ button:disabled { opacity: .55; cursor: not-allowed; }
   border-radius: 0;
 }
 .tabbtn.active { color: var(--magenta); font-weight: 600; border-top: 2px solid var(--magenta); }
+
+/* ===== Monto con su moneda ===== */
+.monto { display: flex; align-items: flex-end; gap: 8px; }
+.monto .campo { flex: 1; min-width: 0; }
+.moneda {
+  display: flex;
+  flex-shrink: 0;
+  margin-bottom: 12px;             /* alinea con el input: su margen (8) + el del campo (4) */
+  border: 1px solid var(--borde-campo);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--blanco);
+}
+.moneda label { position: relative; }
+/* .form input les pondría ancho completo y borde: el radio va escondido. */
+.form .moneda input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; padding: 0; }
+.moneda span {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  font-weight: 700;
+  color: var(--suave);
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.moneda input:checked + span { background: var(--magenta); color: var(--blanco); }
+.moneda input:focus-visible + span { outline: 2px solid var(--morado); outline-offset: -2px; }
+
+.tc { margin: -4px 0 8px; font-size: .76rem; }
+.colchon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: .82rem;
+  margin: -2px 0 10px;
+}
+.colchon .mini { margin-top: 0; }

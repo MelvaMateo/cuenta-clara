@@ -29,13 +29,15 @@ begin
   -- -------------------------------------------------------------- la caja
   --   Lote surtido        $200
   --   Compras en tienda   $190   (se calcula solo desde los productos)
-  --   Flete $45 + Aduana $38 + Otros $12 = $95 de gastos
+  --   Flete $45 + Aduana L 936.70 (se paga en lempiras) + Otros $12
   --   → traer la mercadería la encarece ~24%
+  --   Colchón de 3% por si el dólar sube mientras se vende la caja.
   insert into public.cajas
-    (owner_id, descripcion, fecha, costo_lote_usd, flete_usd, aduana_usd, otros_usd,
-     tipo_cambio, margen_deseado)
+    (owner_id, descripcion, fecha, lote, lote_moneda, flete, flete_moneda,
+     aduana, aduana_moneda, otros, otros_moneda, tipo_cambio, margen_deseado, colchon)
   values
-    (v_owner, 'Caja agosto 2026', '2026-08-14', 200.00, 45.00, 38.00, 12.00, 24.6500, 0.400)
+    (v_owner, 'Caja agosto 2026', '2026-08-14', 200.00, 'USD', 45.00, 'USD',
+     936.70, 'HNL', 12.00, 'USD', 24.6500, 0.400, 0.030)
   returning id into v_caja;
 
   -- ------------------------------------------- comprado en tienda (costo real)

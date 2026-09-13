@@ -10,8 +10,8 @@ Quien trae mercadería desde USA suele ponerle precio a ojo, sin sumar lo que co
 
 ## Qué hace
 
-- **Cajas:** se registra lo que costó la caja (lote, compras en tienda, flete, aduana y otros gastos) y el tipo de cambio. La app reparte ese costo entre los productos, dice cuánto encarece traer la mercadería y cuánto falta vender para recuperar la inversión.
-- **Precio con ganancia:** al cargar un producto muestra su costo real en lempiras y el precio sugerido para el margen elegido, y avisa si un precio queda por debajo del costo.
+- **Cajas:** se registra lo que costó la caja (lote, compras en tienda, flete, aduana y otros gastos, cada uno en la moneda en que se pagó) y el tipo de cambio al que se pagó, que queda fijo con la caja. La app reparte ese costo entre los productos, dice cuánto encarece traer la mercadería y cuánto falta vender para recuperar la inversión.
+- **Precio con ganancia:** al cargar un producto muestra su costo real en lempiras y el precio sugerido para el margen elegido, más un colchón por si sube el dólar que se ajusta por caja, y avisa si un precio queda por debajo del costo.
 - **Stock con alerta:** cada producto con foto tomada desde el celular, y aviso cuando está por agotarse.
 - **Fiados:** quién debe, cuánto, y sus abonos.
 
@@ -29,6 +29,8 @@ Lo comprado en tiendas conserva su costo exacto; lo que llega en lotes surtidos 
 2. Creá el esquema: Supabase → **SQL Editor** → pegá y ejecutá [sql/01_esquema.sql](sql/01_esquema.sql).
 3. Opcional, para la demostración: ejecutá [sql/02_datos_muestra.sql](sql/02_datos_muestra.sql).
 4. Creá la usuaria en **Authentication → Users → Add user**, marcando **Auto Confirm User**.
+
+**Si la base ya existía** (creada con una versión anterior del esquema): corré [sql/03_monedas_y_colchon.sql](sql/03_monedas_y_colchon.sql) y después volvé a correr `01_esquema.sql`, que recrea las vistas sin borrar datos.
 
 El acceso es por correo y contraseña. El botón de **Google** aparece solo cuando el proveedor se activa en Supabase: la app consulta qué proveedores hay antes de mostrarlo.
 
@@ -59,5 +61,6 @@ Abrí la dirección que imprime: esa es la landing. Desde ahí, **Iniciar sesió
 | `js/landing.js`, `js/login.js`, `js/app.js` | Lógica de cada página (la de la landing son solo animaciones) |
 | `sql/01_esquema.sql` | Tablas, índices, RLS, el cálculo del costo por caja y la función de venta |
 | `sql/02_datos_muestra.sql` | Datos inventados para la demostración |
+| `sql/03_monedas_y_colchon.sql` | Migración para bases creadas antes de la moneda por gasto y el colchón |
 | `manifest.json`, `sw.js`, `icon.svg` | Soporte PWA (instalable, offline) |
 | `PLAN.md` | Plan y diseño completo: problema, backlog, arquitectura, calidad, despliegue y validación |

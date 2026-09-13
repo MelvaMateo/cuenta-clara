@@ -12,6 +12,8 @@ async function salir() {
 const fmt = n => 'L ' + Number(n).toFixed(2);
 const usd = n => '$' + Number(n).toFixed(2);
 const pct = n => Math.round(Number(n) * 100) + '%';
+const pct1 = n => (Math.round(Number(n) * 1000) / 10) + '%';     // 0.025 → "2.5%"
+const monto = (v, moneda) => (moneda === 'USD' ? usd(v) : fmt(v));
 
 /* Copia en memoria de lo último que devolvió la base. */
 let cajas = [];
@@ -23,6 +25,11 @@ let fotoPendiente = null;                       // ruta en Storage de la foto ya
    "relation public.productos does not exist" no le sirve a nadie. */
 function mensajeDe(error) {
   const codigo = error.code || '';
+  /* Va primero: su mensaje también dice "schema cache" y se confundiría con
+     que faltan las tablas, cuando lo que falta es correr la migración. */
+  if (codigo === 'PGRST204' || /column .* does not exist/i.test(error.message)) {
+    return 'La base tiene el esquema anterior: corré sql/03_monedas_y_colchon.sql y después sql/01_esquema.sql.';
+  }
   if (codigo === '42P01' || codigo === 'PGRST205' || /schema cache|does not exist/i.test(error.message)) {
     return 'Faltan las tablas en Supabase: corré sql/01_esquema.sql en el SQL Editor.';
   }
@@ -65,21 +72,30 @@ async function addCaja(e) {
     avisar('Falta el nombre de la caja o el tipo de cambio.');
     return;
   }
+  const colchon = parseFloat(f.colchon.value) || 0;
+  if (colchon < 0 || colchon > 50) {
+    avisar('El colchón tiene que estar entre 0 y 50%.');
+    return;
+  }
   const boton = f.querySelector('button[type="submit"]');
   boton.disabled = true;
   try {
     await Datos.agregarCaja({
       descripcion,
       fecha: f.fecha.value || null,
-      costoLote: parseFloat(f.costoLote.value) || 0,
+      lote: parseFloat(f.lote.value) || 0,
+      loteMoneda: f.loteMoneda.value,
       flete: parseFloat(f.flete.value) || 0,
+      fleteMoneda: f.fleteMoneda.value,
       aduana: parseFloat(f.aduana.value) || 0,
+      aduanaMoneda: f.aduanaMoneda.value,
       otros: parseFloat(f.otros.value) || 0,
+      otrosMoneda: f.otrosMoneda.value,
       tipoCambio,
       margen: (parseFloat(f.margen.value) || 0) / 100,
+      colchon: colchon / 100,
     });
-    f.reset();
-    f.margen.value = 40;
+    f.reset();                                   // vuelve a 40% de ganancia y 3% de colchón
     await cargarCajas();
   } catch (error) {
     avisar('No se pudo guardar la caja: ' + mensajeDe(error));
@@ -120,14 +136,23 @@ function renderCajas() {
       </div>
 
       <div class="costos">
-        <div><span>Lote</span><b>${usd(c.costo_lote_usd)}</b></div>
-        <div><span>Tiendas</span><b>${usd(c.mercaderia_usd - c.costo_lote_usd)}</b></div>
-        <div><span>Flete + aduana</span><b>${usd(c.gastos_usd)}</b></div>
+        <div><span>Lote</span><b>${monto(c.lote, c.lote_moneda)}</b></div>
+        <div><span>Tiendas</span><b>${usd(c.tienda_usd)}</b></div>
+        ${[['Flete', c.flete, c.flete_moneda], ['Aduana', c.aduana, c.aduana_moneda], ['Otros', c.otros, c.otros_moneda]]
+          .filter(([, valor]) => Number(valor) > 0)
+          .map(([nombre, valor, moneda]) => `<div><span>${nombre}</span><b>${monto(valor, moneda)}</b></div>`)
+          .join('')}
         <div class="total"><span>Invertiste</span><b>${fmt(invertido)}</b></div>
       </div>
+      <p class="muted tc">Dólar a ${Number(c.tipo_cambio).toFixed(2)}, guardado con esta caja</p>
 
       <p class="factor">Traerla te encarece la mercadería un <b>${encarece}%</b>
          — cada $1 de producto te llega costando ${usd(c.factor)}</p>
+
+      <div class="colchon">
+        <span>Colchón por el dólar: <b>${pct1(c.colchon)}</b></span>
+        <button class="mini secundario" onclick="cambiarColchon('${c.id}')">Cambiar</button>
+      </div>
 
       <div class="barra"><i style="width:${(recuperado * 100).toFixed(0)}%"></i></div>
       <p class="muted">${pct(recuperado)} recuperado · vendido ${fmt(vendido)} de ${fmt(invertido)}</p>
@@ -146,6 +171,28 @@ function renderCajas() {
       <div class="muted">${c.productos} productos · ${c.unidades} unidades · quedan ${c.en_stock}</div>
     </div>`;
   }).join('');
+}
+
+/* El colchón sube los precios sugeridos de lo pagado en dólares, por si el
+   dólar está más caro cuando toque reponer. No toca el costo ni los precios
+   que ya puso: esos los cambia ella, producto por producto. */
+async function cambiarColchon(id) {
+  const c = cajas.find(x => x.id === id);
+  if (!c) return;
+  const texto = prompt(
+    `${c.descripcion}\n\nColchón por el dólar, en %.\n` +
+    `Sube los precios sugeridos por si el dólar está más caro cuando vuelvas a comprar.\n` +
+    `No cambia lo que te costó la caja ni los precios que ya pusiste.`,
+    String(Math.round(Number(c.colchon) * 1000) / 10));
+  if (texto === null) return;
+  const valor = parseFloat(texto.replace(',', '.'));
+  if (!(valor >= 0 && valor <= 50)) { avisar('El colchón tiene que estar entre 0 y 50%.'); return; }
+  try {
+    await Datos.cambiarColchon(id, valor / 100);
+    await Promise.all([cargarCajas(), cargarProductos()]);
+  } catch (error) {
+    avisar('No se pudo cambiar el colchón: ' + mensajeDe(error));
+  }
 }
 
 function llenarSelectCajas() {
@@ -173,9 +220,13 @@ function calcularSugerido() {
 
   if (!caja || !(valor > 0)) { cont.className = 'sugerencia'; cont.textContent = ''; return; }
 
-  const base = origen === 'lote' ? valor * Number(caja.k) : valor;
-  const costo = base * Number(caja.factor) * Number(caja.tipo_cambio);
-  const sugerido = costo * (1 + Number(caja.margen_deseado));
+  /* El mismo cálculo que la vista productos_costeados (sql/01_esquema.sql):
+     k ya viene en lempiras por dólar estimado; lo de tienda se convierte con
+     el dólar de la caja. El colchón solo pesa sobre la parte pagada en dólares. */
+  const base = origen === 'lote' ? valor * Number(caja.k) : valor * Number(caja.tipo_cambio);
+  const costo = base * Number(caja.factor);
+  const sugerido = costo * (1 + Number(caja.colchon) * Number(caja.parte_usd))
+                         * (1 + Number(caja.margen_deseado));
 
   if (origen === 'lote' && !(Number(caja.k) > 0)) {
     cont.className = 'sugerencia';
@@ -183,8 +234,9 @@ function calcularSugerido() {
     return;
   }
 
+  const conColchon = Number(caja.colchon) > 0 ? ` con ${pct1(caja.colchon)} de colchón` : '';
   let clase = 'sugerencia visible', msg =
-    `Te cuesta <b>${fmt(costo)}</b> · para ganar ${pct(caja.margen_deseado)} vendelo a <b>${fmt(sugerido)}</b>`;
+    `Te cuesta <b>${fmt(costo)}</b> · para ganar ${pct(caja.margen_deseado)}${conColchon} vendelo a <b>${fmt(sugerido)}</b>`;
 
   if (precio > 0 && precio < costo) {
     clase += ' perdida';

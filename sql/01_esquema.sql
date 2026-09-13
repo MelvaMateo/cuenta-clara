@@ -21,16 +21,29 @@ create table if not exists public.cajas (
   descripcion     text not null check (length(trim(descripcion)) > 0),
   fecha           date not null default current_date,
 
+  -- Cada monto va en la moneda en que se pagó: lo de USA en dólares, la
+  -- aduana normalmente en lempiras. Solo lo pagado en dólares usa tipo_cambio.
+
   -- Lo que pagó por el lote surtido. 0 si llenó la caja solo con compras.
-  costo_lote_usd  numeric(10,2) not null default 0 check (costo_lote_usd >= 0),
+  lote            numeric(10,2) not null default 0 check (lote >= 0),
+  lote_moneda     text not null default 'USD' check (lote_moneda in ('USD', 'HNL')),
 
-  -- Lo que costó traerla. Es justo lo que hoy no toma en cuenta al fijar precios.
-  flete_usd       numeric(10,2) not null default 0 check (flete_usd >= 0),
-  aduana_usd      numeric(10,2) not null default 0 check (aduana_usd >= 0),
-  otros_usd       numeric(10,2) not null default 0 check (otros_usd >= 0),
+  -- Lo que costó traerla: justo lo que no se toma en cuenta al poner precio a ojo.
+  flete           numeric(10,2) not null default 0 check (flete >= 0),
+  flete_moneda    text not null default 'USD' check (flete_moneda in ('USD', 'HNL')),
+  aduana          numeric(10,2) not null default 0 check (aduana >= 0),
+  aduana_moneda   text not null default 'HNL' check (aduana_moneda in ('USD', 'HNL')),
+  otros           numeric(10,2) not null default 0 check (otros >= 0),
+  otros_moneda    text not null default 'USD' check (otros_moneda in ('USD', 'HNL')),
 
+  -- El dólar al que se pagó, no el del día. Queda fijo con la caja, así los
+  -- precios no cambian cada vez que se mueve el tipo de cambio.
   tipo_cambio     numeric(10,4) not null check (tipo_cambio > 0),
   margen_deseado  numeric(4,3)  not null default 0.400 check (margen_deseado >= 0),
+
+  -- Colchón cambiario: sube el precio sugerido de la parte pagada en dólares,
+  -- por si el dólar está más caro cuando toque reponer. No toca el costo real.
+  colchon         numeric(4,3)  not null default 0.030 check (colchon >= 0 and colchon <= 0.5),
 
   creada_en       timestamptz not null default now()
 );
@@ -141,106 +154,125 @@ end $$;
 -- ============================================================================
 -- security_invoker: las vistas respetan el RLS de quien consulta. Sin esto,
 -- cualquiera vería las cajas de todas.
+--
+-- Todo se lleva a lempiras: lo pagado en dólares se convierte con el
+-- tipo_cambio de la caja y lo pagado en lempiras entra tal cual.
 
 drop view if exists public.productos_costeados;
-create view public.productos_costeados with (security_invoker = on) as
-with base as (
-  select
-    c.id                as caja_id,
-    c.descripcion       as caja,
-    c.tipo_cambio,
-    c.margen_deseado,
-    c.costo_lote_usd,
-    c.flete_usd + c.aduana_usd + c.otros_usd                                     as gastos_usd,
-    -- Peso del lote: la suma de las estimaciones. Solo importan las proporciones.
-    coalesce(sum(p.valor_usd * p.cantidad) filter (where p.origen = 'lote'), 0)   as peso_lote,
-    coalesce(sum(p.valor_usd * p.cantidad) filter (where p.origen = 'tienda'), 0) as mercaderia_tienda
-  from public.cajas c
-  left join public.productos p on p.caja_id = c.id
-  group by c.id
-),
-factores as (
-  select
-    b.*,
-    b.costo_lote_usd + b.mercaderia_tienda as mercaderia_usd,
-    -- k convierte la estimación del lote en costo real: si estimó $520 y el
-    -- lote costó $200, cada estimación se multiplica por 0.385.
-    case when b.peso_lote > 0 then b.costo_lote_usd / b.peso_lote else 0 end as k,
-    -- factor: cuánto encarece traer la caja. 1.35 = "cada $1 llega a $1.35".
-    case when (b.costo_lote_usd + b.mercaderia_tienda) > 0
-         then 1 + b.gastos_usd / (b.costo_lote_usd + b.mercaderia_tienda)
-         else 1 end as factor
-  from base b
-)
-select
-  p.id, p.owner_id, p.caja_id, f.caja, p.nombre, p.foto_path, p.origen,
-  p.valor_usd, p.cantidad, p.stock, p.stock_minimo, p.precio,
-  round(f.factor, 4) as factor,
-  round(
-    (case when p.origen = 'lote' then p.valor_usd * f.k else p.valor_usd end)
-    * f.factor * f.tipo_cambio, 2)                                    as costo_unitario,
-  round(
-    (case when p.origen = 'lote' then p.valor_usd * f.k else p.valor_usd end)
-    * f.factor * f.tipo_cambio * (1 + f.margen_deseado), 2)           as precio_sugerido
-from public.productos p
-join factores f on f.caja_id = p.caja_id;
-
--- ------------------------------------------------- resumen de cada caja
--- Responde "¿esta caja me deja ganancia?" y "¿cuánto me falta para recuperar?"
 drop view if exists public.cajas_resumen;
-create view public.cajas_resumen with (security_invoker = on) as
+drop view if exists public.cajas_calculo;
+
+-- Una sola vista hace las cuentas de cada caja; las otras dos la usan, así la
+-- fórmula vive en un solo lugar.
+create view public.cajas_calculo with (security_invoker = on) as
 select
-  c.id, c.owner_id, c.descripcion, c.fecha,
-  c.costo_lote_usd, c.flete_usd, c.aduana_usd, c.otros_usd,
-  c.tipo_cambio, c.margen_deseado,
-
-  inv.mercaderia_usd,
-  c.flete_usd + c.aduana_usd + c.otros_usd                as gastos_usd,
-  inv.mercaderia_usd + c.flete_usd + c.aduana_usd + c.otros_usd as total_usd,
-  round((inv.mercaderia_usd + c.flete_usd + c.aduana_usd + c.otros_usd)
-        * c.tipo_cambio, 2)                               as invertido,
-
-  round(case when inv.mercaderia_usd > 0
-             then 1 + (c.flete_usd + c.aduana_usd + c.otros_usd) / inv.mercaderia_usd
-             else 1 end, 4)                               as factor,
-
-  -- peso_lote y k permiten que la app calcule el precio sugerido en pantalla
-  -- mientras ella carga el producto, sin ir y volver a la base.
+  c.id,
+  c.owner_id,
+  c.tipo_cambio,
+  c.margen_deseado,
+  c.colchon,
   inv.peso_lote,
-  round(case when inv.peso_lote > 0 then c.costo_lote_usd / inv.peso_lote else 0 end, 6) as k,
-
+  inv.tienda_usd,
   inv.productos,
   inv.unidades,
   inv.en_stock,
-  inv.valor_venta,                                        -- si vende todo
-  inv.por_vender,                                         -- lo que queda, a precio
-  coalesce(v.vendido, 0)                                  as vendido,
-
-  round(inv.valor_venta
-        - (inv.mercaderia_usd + c.flete_usd + c.aduana_usd + c.otros_usd)
-          * c.tipo_cambio, 2)                             as ganancia_proyectada,
-  greatest(round((inv.mercaderia_usd + c.flete_usd + c.aduana_usd + c.otros_usd)
-                 * c.tipo_cambio - coalesce(v.vendido, 0), 2), 0) as falta_recuperar
+  inv.valor_venta,
+  inv.por_vender,
+  lps.lote_lps,
+  lps.flete_lps + lps.aduana_lps + lps.otros_lps                             as gastos_lps,
+  tot.mercaderia_lps,
+  tot.invertido,
+  -- factor: cuánto encarece traer la caja. 1.24 = "cada L 1 de mercadería llega costando L 1.24".
+  case when tot.mercaderia_lps > 0
+       then 1 + (lps.flete_lps + lps.aduana_lps + lps.otros_lps) / tot.mercaderia_lps
+       else 1 end                                                             as factor,
+  -- k: lempiras reales por cada dólar estimado del lote. Si estimó $304 en
+  -- total y el lote costó L 4,930, cada dólar estimado vale L 16.22.
+  case when inv.peso_lote > 0 then lps.lote_lps / inv.peso_lote else 0 end   as k,
+  -- Qué parte de la caja se pagó en dólares: es la única expuesta a que el
+  -- dólar suba, y la única a la que se le aplica el colchón.
+  case when tot.invertido > 0 then tot.en_dolares / tot.invertido else 0 end as parte_usd
 from public.cajas c
 left join lateral (
   select
-    coalesce(sum(p.valor_usd * p.cantidad) filter (where p.origen = 'tienda'), 0)
-      + c.costo_lote_usd                          as mercaderia_usd,
-    coalesce(sum(p.valor_usd * p.cantidad) filter (where p.origen = 'lote'), 0)
-                                                  as peso_lote,
-    count(p.id)                                   as productos,
-    coalesce(sum(p.cantidad), 0)                  as unidades,
-    coalesce(sum(p.stock), 0)                     as en_stock,
-    coalesce(sum(p.precio * p.cantidad), 0)       as valor_venta,
-    coalesce(sum(p.precio * p.stock), 0)          as por_vender
-  from public.productos p where p.caja_id = c.id
+    coalesce(sum(p.valor_usd * p.cantidad) filter (where p.origen = 'lote'), 0)   as peso_lote,
+    coalesce(sum(p.valor_usd * p.cantidad) filter (where p.origen = 'tienda'), 0) as tienda_usd,
+    count(p.id)                             as productos,
+    coalesce(sum(p.cantidad), 0)            as unidades,
+    coalesce(sum(p.stock), 0)               as en_stock,
+    coalesce(sum(p.precio * p.cantidad), 0) as valor_venta,
+    coalesce(sum(p.precio * p.stock), 0)    as por_vender
+  from public.productos p
+  where p.caja_id = c.id
 ) inv on true
+cross join lateral (
+  select
+    c.lote   * case when c.lote_moneda   = 'USD' then c.tipo_cambio else 1 end as lote_lps,
+    c.flete  * case when c.flete_moneda  = 'USD' then c.tipo_cambio else 1 end as flete_lps,
+    c.aduana * case when c.aduana_moneda = 'USD' then c.tipo_cambio else 1 end as aduana_lps,
+    c.otros  * case when c.otros_moneda  = 'USD' then c.tipo_cambio else 1 end as otros_lps
+) lps
+cross join lateral (
+  select
+    lps.lote_lps + inv.tienda_usd * c.tipo_cambio                               as mercaderia_lps,
+    lps.lote_lps + inv.tienda_usd * c.tipo_cambio
+      + lps.flete_lps + lps.aduana_lps + lps.otros_lps                          as invertido,
+    inv.tienda_usd * c.tipo_cambio
+      + case when c.lote_moneda   = 'USD' then lps.lote_lps   else 0 end
+      + case when c.flete_moneda  = 'USD' then lps.flete_lps  else 0 end
+      + case when c.aduana_moneda = 'USD' then lps.aduana_lps else 0 end
+      + case when c.otros_moneda  = 'USD' then lps.otros_lps  else 0 end        as en_dolares
+) tot;
+
+-- ------------------------------------------------- resumen de cada caja
+-- Responde "¿esta caja me deja ganancia?" y "¿cuánto me falta para recuperar?"
+create view public.cajas_resumen with (security_invoker = on) as
+select
+  c.id, c.owner_id, c.descripcion, c.fecha,
+  c.lote, c.lote_moneda, c.flete, c.flete_moneda,
+  c.aduana, c.aduana_moneda, c.otros, c.otros_moneda,
+  c.tipo_cambio, c.margen_deseado, c.colchon,
+  k.tienda_usd,
+  round(k.mercaderia_lps, 2)                                  as mercaderia_lps,
+  round(k.gastos_lps, 2)                                      as gastos_lps,
+  round(k.invertido, 2)                                       as invertido,
+  round(k.factor, 4)                                          as factor,
+  k.peso_lote,
+  round(k.k, 6)                                               as k,
+  round(k.parte_usd, 4)                                       as parte_usd,
+  k.productos, k.unidades, k.en_stock,
+  k.valor_venta,                                              -- si vende todo
+  k.por_vender,                                               -- lo que queda, a precio
+  coalesce(v.vendido, 0)                                      as vendido,
+  round(k.valor_venta - k.invertido, 2)                       as ganancia_proyectada,
+  greatest(round(k.invertido - coalesce(v.vendido, 0), 2), 0) as falta_recuperar
+from public.cajas c
+join public.cajas_calculo k on k.id = c.id
 left join lateral (
   select coalesce(sum(dv.cantidad * dv.precio_unit), 0) as vendido
   from public.detalle_venta dv
   join public.productos p on p.id = dv.producto_id
   where p.caja_id = c.id
 ) v on true;
+
+-- ------------------------------------------- costo y precio de cada producto
+create view public.productos_costeados with (security_invoker = on) as
+select
+  p.id, p.owner_id, p.caja_id, c.descripcion as caja, p.nombre, p.foto_path, p.origen,
+  p.valor_usd, p.cantidad, p.stock, p.stock_minimo, p.precio,
+  round(k.factor, 4)                                                         as factor,
+  round(u.costo, 2)                                                          as costo_unitario,
+  -- El colchón se aplica solo a la parte pagada en dólares; el margen, a todo.
+  round(u.costo * (1 + k.colchon * k.parte_usd) * (1 + k.margen_deseado), 2) as precio_sugerido
+from public.productos p
+join public.cajas c         on c.id = p.caja_id
+join public.cajas_calculo k on k.id = p.caja_id
+cross join lateral (
+  -- Lo del lote reparte el costo del lote según su estimación; lo de tienda es
+  -- su costo exacto en dólares. Después se le suma su parte de los gastos.
+  select (case when p.origen = 'lote' then p.valor_usd * k.k
+               else p.valor_usd * k.tipo_cambio end) * k.factor as costo
+) u;
 
 -- --------------------------------------------------------- vista de fiados
 drop view if exists public.fiados;

@@ -35,29 +35,56 @@
             <input name="tipoCambio" type="number" step="0.0001" placeholder="24.65" required>
           </label>
         </div>
+        <p class="nota-form">El dólar al que lo pagaste de verdad: los lempiras que salieron de tu cuenta ÷ los dólares que recibiste. Queda fijo con esta caja, así los precios no cambian cada día.</p>
 
-        <p class="ayuda-form">Lo que pagaste, en dólares:</p>
-        <div class="row">
+        <p class="ayuda-form">Lo que pagaste, en la moneda en que lo pagaste:</p>
+        <div class="monto">
           <label class="campo">Lote surtido
-            <input name="costoLote" type="number" step="0.01" placeholder="0.00">
+            <input name="lote" type="number" step="0.01" min="0" placeholder="0.00">
           </label>
+          <div class="moneda" role="radiogroup" aria-label="Moneda del lote">
+            <label><input type="radio" name="loteMoneda" value="USD" checked><span>$</span></label>
+            <label><input type="radio" name="loteMoneda" value="HNL"><span>L</span></label>
+          </div>
+        </div>
+        <div class="monto">
           <label class="campo">Flete
-            <input name="flete" type="number" step="0.01" placeholder="0.00">
+            <input name="flete" type="number" step="0.01" min="0" placeholder="0.00">
           </label>
+          <div class="moneda" role="radiogroup" aria-label="Moneda del flete">
+            <label><input type="radio" name="fleteMoneda" value="USD" checked><span>$</span></label>
+            <label><input type="radio" name="fleteMoneda" value="HNL"><span>L</span></label>
+          </div>
         </div>
-        <div class="row">
+        <div class="monto">
           <label class="campo">Aduana
-            <input name="aduana" type="number" step="0.01" placeholder="0.00">
+            <input name="aduana" type="number" step="0.01" min="0" placeholder="0.00">
           </label>
+          <div class="moneda" role="radiogroup" aria-label="Moneda de la aduana">
+            <label><input type="radio" name="aduanaMoneda" value="USD"><span>$</span></label>
+            <label><input type="radio" name="aduanaMoneda" value="HNL" checked><span>L</span></label>
+          </div>
+        </div>
+        <div class="monto">
           <label class="campo">Otros gastos
-            <input name="otros" type="number" step="0.01" placeholder="0.00">
+            <input name="otros" type="number" step="0.01" min="0" placeholder="0.00">
+          </label>
+          <div class="moneda" role="radiogroup" aria-label="Moneda de otros gastos">
+            <label><input type="radio" name="otrosMoneda" value="USD" checked><span>$</span></label>
+            <label><input type="radio" name="otrosMoneda" value="HNL"><span>L</span></label>
+          </div>
+        </div>
+        <p class="nota-form">Lo comprado en tiendas de USA se suma solo, en dólares, desde cada producto que cargues.</p>
+
+        <div class="row">
+          <label class="campo">Ganancia que querés (%)
+            <input name="margen" type="number" step="1" min="0" value="40" required>
+          </label>
+          <label class="campo">Colchón por el dólar (%)
+            <input name="colchon" type="number" step="0.5" min="0" max="50" value="3">
           </label>
         </div>
-        <p class="nota-form">Lo comprado en tiendas se suma solo, desde cada producto que cargues.</p>
-
-        <label class="campo">Ganancia que querés (%)
-          <input name="margen" type="number" step="1" value="40" required>
-        </label>
+        <p class="nota-form">El colchón sube un poco los precios sugeridos de lo que pagaste en dólares, por si el dólar está más caro cuando vuelvas a comprar. No cambia lo que te costó la caja. Si vas a vender rápido, dejalo en 0.</p>
 
         <button type="submit">Guardar caja</button>
       </form>

@@ -24,15 +24,26 @@ const Datos = {
     const { data, error } = await sb.from('cajas').insert({
       descripcion: caja.descripcion,
       fecha: caja.fecha || new Date().toISOString().slice(0, 10),
-      costo_lote_usd: caja.costoLote || 0,
-      flete_usd: caja.flete || 0,
-      aduana_usd: caja.aduana || 0,
-      otros_usd: caja.otros || 0,
+      lote: caja.lote || 0,
+      lote_moneda: caja.loteMoneda,
+      flete: caja.flete || 0,
+      flete_moneda: caja.fleteMoneda,
+      aduana: caja.aduana || 0,
+      aduana_moneda: caja.aduanaMoneda,
+      otros: caja.otros || 0,
+      otros_moneda: caja.otrosMoneda,
       tipo_cambio: caja.tipoCambio,
       margen_deseado: caja.margen,
+      colchon: caja.colchon,
     }).select('id').single();
     if (error) throw error;
     return data.id;
+  },
+
+  /* El colchón solo mueve los precios sugeridos: el costo real no cambia. */
+  async cambiarColchon(id, colchon) {
+    const { error } = await sb.from('cajas').update({ colchon }).eq('id', id);
+    if (error) throw error;
   },
 
   /* ===== Productos ===== */
