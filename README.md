@@ -1,5 +1,7 @@
 # Cuenta Clara
 
+[![CI](https://github.com/MelvaMateo/cuenta-clara/actions/workflows/ci.yml/badge.svg)](https://github.com/MelvaMateo/cuenta-clara/actions/workflows/ci.yml)
+
 App web (PWA) para emprendedores que traen cajas desde USA y revenden: saber si cada caja les deja ganancia, a cuánto vender cada producto, quién les debe y qué se está por agotar.
 
 Proyecto del capstone de **Ingeniería de Software I**.
@@ -47,6 +49,30 @@ npx serve .
 
 Abrí la dirección que imprime: esa es la landing. Desde ahí, **Iniciar sesión** te lleva al login y, tras entrar, a la app.
 
+## Pruebas y CI/CD
+
+Las pruebas no forman parte del sitio: el sitio es estático y se publica sin instalar nada. Para correrlas hace falta Node 20 o más:
+
+```bash
+npm ci      # instala las herramientas de prueba
+npm test    # corre las tres, en este orden
+```
+
+| Comando | Qué prueba |
+|---|---|
+| `npm run test:sintaxis` | Que cada script de `js/` y el service worker se puedan leer |
+| `npm run test:sql` | Los scripts de `sql/` en un Postgres real (PGlite): que se puedan repetir, que actualicen una base con la historia real sin cambiar ningún número, los textos canónicos y las operaciones con clave |
+| `npm run test:ui` | La app en Chrome, con Supabase simulado: que un reintento después de un corte no repita la operación, los números escritos a mano y el orden de las listas. Si Chrome no está en su lugar habitual, poné la ruta en la variable `NAVEGADOR` |
+
+**CI (integración continua).** GitHub Actions corre esas tres pruebas en cada push y en cada pull request ([.github/workflows/ci.yml](.github/workflows/ci.yml)). Si alguna falla, el commit o el PR queda con una ❌ en GitHub; la insignia de arriba muestra cómo quedó el último.
+
+**CD.** Vercel está conectado al repo: cada push a `main` se publica solo en https://www.melvamateo.site, y cada rama o PR recibe una URL de vista previa. Eso es *despliegue* continuo (lo nuevo llega a producción sin que nadie apriete un botón), que va un paso más allá de la *entrega* continua (lo nuevo queda listo para publicar, pero alguien decide cuándo).
+
+Hoy Vercel publica sin esperar al CI: un push que rompa las pruebas igual llega a producción, y la ❌ solo avisa. Para que se publique únicamente lo que pasó el CI hay que activar dos cosas:
+
+- **En Vercel:** que el despliegue a producción espere el check `CI` de GitHub.
+- **En GitHub:** proteger `main` para que un PR no se pueda unir sin el check en verde.
+
 ## Estructura
 
 | Archivo | Qué es |
@@ -61,5 +87,7 @@ Abrí la dirección que imprime: esa es la landing. Desde ahí, **Iniciar sesió
 | `js/datos.js` | Consultas a PostgreSQL y subida de fotos a Storage. Cada escritura lleva su clave, así un reintento no la repite (ver `sql/README.md`) |
 | `js/landing.js`, `js/login.js`, `js/app.js` | Lógica de cada página (la de la landing son solo animaciones) |
 | `sql/` | Scripts de la base, numerados e idempotentes: tablas, migraciones, índices, seguridad, cálculos, fotos, muestra y revisión (ver `sql/README.md`) |
+| `tests/`, `package.json` | Las pruebas y sus herramientas; el sitio no las necesita (ver "Pruebas y CI/CD") |
+| `.github/workflows/ci.yml` | El pipeline de CI en GitHub Actions |
 | `manifest.json`, `sw.js`, `icon.svg` | Soporte PWA (instalable, offline) |
 | `PLAN.md` | Plan y diseño completo: problema, backlog, arquitectura, calidad, despliegue y validación |

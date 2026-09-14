@@ -52,6 +52,6 @@ Si 02 encuentra datos que apuntan a otra cuenta, se detiene y avisa en vez de fa
 
 ## Cómo se probaron
 
-Los scripts se ejecutaron en un Postgres real (PGlite) con lo mínimo de Supabase simulado, en dos escenarios: una base vacía y una copia de la base con la historia real del proyecto (esquema v1 con su muestra, luego la migración de monedas). En los dos, correr todo por segunda vez deja la estructura y los datos idénticos.
+Las pruebas están en [tests/sql.test.mjs](../tests/sql.test.mjs): se corren con `npm run test:sql`, y el CI las corre en cada push. Los scripts se ejecutaron en un Postgres real (PGlite) con lo mínimo de Supabase simulado, en dos escenarios: una base vacía y una copia de la base con la historia real del proyecto (esquema v1 con su muestra, luego la migración de monedas). En los dos, correr todo por segunda vez deja la estructura y los datos idénticos.
 
 Cada operación se llamó dos veces con la misma clave (queda una sola), con la misma clave y otros datos (se rechaza sin dejar nada a medias) y con datos inválidos. La app se probó con un Supabase simulado que corta la respuesta después de guardar: el reintento manda la misma clave, y la operación siguiente, otra. Las pruebas corren en una sola conexión, así que el bloqueo entre dos operaciones simultáneas no se probó.
