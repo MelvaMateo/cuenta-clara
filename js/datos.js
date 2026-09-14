@@ -1,7 +1,7 @@
 /* Acceso a los datos en Supabase (PostgreSQL) y a las fotos (Storage).
 
    El costo real de cada producto no se guarda: lo calcula la base repartiendo
-   lo que costó la caja (ver la vista productos_costeados en sql/01_esquema.sql).
+   lo que costó la caja (ver la vista productos_costeados en sql/05_calculos.sql).
    Acá solo se lee ya calculado.
 
    Cada consulta devuelve solo las filas de quien inició sesión, porque las

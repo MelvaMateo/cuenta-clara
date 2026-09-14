@@ -26,11 +26,10 @@ Lo comprado en tiendas conserva su costo exacto; lo que llega en lotes surtidos 
 ## Configuración
 
 1. Copiá la URL del proyecto y la *publishable key* (Supabase → Project Settings → API) en [js/config.js](js/config.js). Mientras queden los valores de ejemplo, el login lo avisa en pantalla en vez de fallar en silencio.
-2. Creá el esquema: Supabase → **SQL Editor** → pegá y ejecutá [sql/01_esquema.sql](sql/01_esquema.sql).
-3. Opcional, para la demostración: ejecutá [sql/02_datos_muestra.sql](sql/02_datos_muestra.sql).
-4. Creá la usuaria en **Authentication → Users → Add user**, marcando **Auto Confirm User**.
-
-**Si la base ya existía** (creada con una versión anterior del esquema): corré [sql/03_monedas_y_colchon.sql](sql/03_monedas_y_colchon.sql) y después volvé a correr `01_esquema.sql`, que recrea las vistas sin borrar datos.
+2. Creá la usuaria en **Authentication → Users → Add user**, marcando **Auto Confirm User**, o entrá una vez con Google.
+3. Creá la base: Supabase → **SQL Editor** → corré en orden los scripts de [sql/](sql/), del `01` al `06`. Son idempotentes: sirven igual para una base nueva que para actualizar una que ya existe, y se pueden repetir sin romper nada. El detalle está en [sql/README.md](sql/README.md).
+4. Opcional, para la demostración: `07_datos_muestra.sql` carga una caja de ejemplo en la cuenta que indiques.
+5. Para revisar que todo quedó bien: `08_verificacion.sql`, que solo lee.
 
 El acceso es por correo y contraseña. El botón de **Google** aparece solo cuando el proveedor se activa en Supabase: la app consulta qué proveedores hay antes de mostrarlo.
 
@@ -59,8 +58,6 @@ Abrí la dirección que imprime: esa es la landing. Desde ahí, **Iniciar sesió
 | `js/sesion.js` | Abrir, leer y cerrar sesión contra Supabase Auth; lo usan el login y la app |
 | `js/datos.js` | Consultas a PostgreSQL y subida de fotos a Storage |
 | `js/landing.js`, `js/login.js`, `js/app.js` | Lógica de cada página (la de la landing son solo animaciones) |
-| `sql/01_esquema.sql` | Tablas, índices, RLS, el cálculo del costo por caja y la función de venta |
-| `sql/02_datos_muestra.sql` | Datos inventados para la demostración |
-| `sql/03_monedas_y_colchon.sql` | Migración para bases creadas antes de la moneda por gasto y el colchón |
+| `sql/` | Scripts de la base, numerados e idempotentes: tablas, migraciones, índices, seguridad, cálculos, fotos, muestra y revisión (ver `sql/README.md`) |
 | `manifest.json`, `sw.js`, `icon.svg` | Soporte PWA (instalable, offline) |
 | `PLAN.md` | Plan y diseño completo: problema, backlog, arquitectura, calidad, despliegue y validación |

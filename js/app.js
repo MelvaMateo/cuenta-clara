@@ -43,17 +43,17 @@ function mensajeDe(error) {
   /* Va primero: su mensaje también dice "schema cache" y se confundiría con
      que faltan las tablas, cuando lo que falta es correr la migración. */
   if (codigo === 'PGRST204' || /column .* does not exist/i.test(error.message)) {
-    return 'La base tiene el esquema anterior: corré sql/03_monedas_y_colchon.sql y después sql/01_esquema.sql.';
+    return 'La base tiene una estructura anterior: corré en orden los scripts de sql/, del 01 al 06.';
   }
   if (codigo === '42P01' || codigo === 'PGRST205' || /schema cache|does not exist/i.test(error.message)) {
-    return 'Faltan las tablas en Supabase: corré sql/01_esquema.sql en el SQL Editor.';
+    return 'Faltan las tablas en Supabase: corré en orden los scripts de sql/, del 01 al 06.';
   }
   if (codigo === '42883' || codigo === 'PGRST202') {
-    return 'Falta la función vender_producto: corré sql/01_esquema.sql en el SQL Editor.';
+    return 'Falta la función vender_producto: corré sql/05_calculos.sql en el SQL Editor.';
   }
   if (codigo === '42501') return 'La base rechazó la operación por permisos (RLS).';
   if (/bucket not found/i.test(error.message)) {
-    return 'Falta el bucket de fotos: corré sql/01_esquema.sql en el SQL Editor.';
+    return 'Falta el bucket de fotos: corré sql/06_fotos.sql en el SQL Editor.';
   }
   if (/failed to fetch|networkerror/i.test(error.message)) return 'Sin conexión con Supabase.';
   return error.message;
@@ -326,7 +326,7 @@ function calcularSugerido() {
 
   if (!caja || !(valor > 0)) { cont.className = 'sugerencia'; cont.textContent = ''; return; }
 
-  /* El mismo cálculo que la vista productos_costeados (sql/01_esquema.sql):
+  /* El mismo cálculo que la vista productos_costeados (sql/05_calculos.sql):
      k ya viene en lempiras por dólar estimado; lo de tienda se convierte con
      el dólar de la caja. El colchón solo pesa sobre la parte pagada en dólares. */
   const base = origen === 'lote' ? valor * Number(caja.k) : valor * Number(caja.tipo_cambio);
