@@ -29,7 +29,7 @@ Lo comprado en tiendas conserva su costo exacto; lo que llega en lotes surtidos 
 
 ## Configuración
 
-1. Copiá la URL del proyecto y la *publishable key* (Supabase → Project Settings → API) en [js/config.js](js/config.js). Mientras queden los valores de ejemplo, el login lo avisa en pantalla en vez de fallar en silencio.
+1. Copiá la URL del proyecto y su clave pública (Supabase → Project Settings → API) en [js/config.js](js/config.js). Mientras queden los valores de ejemplo, el login lo avisa en pantalla en vez de fallar en silencio.
 2. Creá la usuaria en **Authentication → Users → Add user**, marcando **Auto Confirm User**, o entrá una vez con Google.
 3. Creá la base: Supabase → **SQL Editor** → corré en orden los scripts de [sql/](sql/), del `01` al `06`. Son idempotentes: sirven igual para una base nueva que para actualizar una que ya existe, y se pueden repetir sin romper nada. El detalle está en [sql/README.md](sql/README.md).
 4. Opcional, para la demostración: `07_datos_muestra.sql` carga una caja de ejemplo en la cuenta que indiques.
@@ -37,7 +37,7 @@ Lo comprado en tiendas conserva su costo exacto; lo que llega en lotes surtidos 
 
 El acceso es por correo y contraseña. El botón de **Google** aparece solo cuando el proveedor se activa en Supabase: la app consulta qué proveedores hay antes de mostrarlo.
 
-La *anon key* es pública por diseño: viaja al navegador en cualquier app de Supabase, y lo que protege los datos son las políticas RLS. La `service_role key` nunca va en este repo.
+La clave pública de Supabase es pública por diseño: viaja al navegador en cualquier app de Supabase, y lo que protege los datos son las políticas RLS. La clave de administrador del proyecto, que se salta esas políticas, nunca va en este repo.
 
 ## Cómo probarlo
 
@@ -82,7 +82,7 @@ Solo llega a producción lo que pasó el CI:
 | `app.html` | La aplicación: cajas, stock, fiados y resumen |
 | `css/base.css` | Reset, colores de la marca y botón, compartidos por las tres páginas |
 | `css/landing.css`, `css/login.css`, `css/app.css` | Estilos propios de cada página |
-| `js/config.js` | URL y *publishable key* del proyecto de Supabase |
+| `js/config.js` | URL y clave pública del proyecto de Supabase |
 | `js/sesion.js` | Abrir, leer y cerrar sesión contra Supabase Auth; lo usan el login y la app |
 | `js/datos.js` | Consultas a PostgreSQL y subida de fotos a Storage. Cada escritura lleva su clave, así un reintento no la repite (ver `sql/README.md`) |
 | `js/landing.js`, `js/login.js`, `js/app.js` | Lógica de cada página (la de la landing son solo animaciones) |
