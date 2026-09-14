@@ -48,8 +48,11 @@ const Datos = {
     return data;
   },
 
-  async agregarCaja(caja) {
-    const { data, error } = await sb.from('cajas').insert({
+  /* La clave es el id de la caja. Con "on conflict do nothing", reintentar
+     con la misma clave no crea otra. */
+  async agregarCaja(clave, caja) {
+    const { error } = await sb.from('cajas').upsert({
+      id: clave,
       descripcion: caja.descripcion,
       fecha: caja.fecha || new Date().toLocaleDateString('en-CA'),   // AAAA-MM-DD en hora local: en UTC, de noche en Honduras ya es mañana
       lote: caja.lote || 0,
@@ -63,9 +66,9 @@ const Datos = {
       tipo_cambio: caja.tipoCambio,
       margen_deseado: caja.margen,
       colchon: caja.colchon,
-    }).select('id').single();
+    }, { onConflict: 'id', ignoreDuplicates: true });
     if (error) throw error;
-    return data.id;
+    return clave;
   },
 
   /* El colchón solo mueve los precios sugeridos: el costo real no cambia. */
@@ -87,8 +90,10 @@ const Datos = {
     return data;
   },
 
-  async agregarProducto(p) {
-    const { error } = await sb.from('productos').insert({
+  /* Igual que la caja: la clave es el id del producto. */
+  async agregarProducto(clave, p) {
+    const { error } = await sb.from('productos').upsert({
+      id: clave,
       caja_id: p.cajaId,
       nombre: p.nombre,
       origen: p.origen,
@@ -98,7 +103,7 @@ const Datos = {
       stock_minimo: p.stockMinimo || 0,
       precio: p.precio || 0,
       foto_path: p.fotoPath || null,
-    });
+    }, { onConflict: 'id', ignoreDuplicates: true });
     if (error) throw error;
   },
 

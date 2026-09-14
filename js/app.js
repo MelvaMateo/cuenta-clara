@@ -157,7 +157,7 @@ async function addCaja(e) {
   const boton = f.querySelector('button[type="submit"]');
   boton.disabled = true;
   try {
-    await Datos.agregarCaja({
+    const caja = {
       descripcion,
       fecha: f.fecha.value || null,
       lote: parseFloat(f.lote.value) || 0,
@@ -171,7 +171,9 @@ async function addCaja(e) {
       tipoCambio,
       margen: (parseFloat(f.margen.value) || 0) / 100,
       colchon: colchon / 100,
-    });
+    };
+    await Claves.con(['caja', { ...caja, descripcion: Claves.texto(descripcion) }, cajas.length],
+      clave => Datos.agregarCaja(clave, caja));
     f.reset();                                   // vuelve a 40% de ganancia y 3% de colchón
     if (!esEscritorio()) alternarPanel('panelCaja', false);
     avisar(`Caja "${descripcion}" guardada`, 'ok');
@@ -399,7 +401,7 @@ async function addProducto(e) {
   const boton = f.querySelector('button[type="submit"]');
   boton.disabled = true;
   try {
-    await Datos.agregarProducto({
+    const producto = {
       cajaId: f.cajaId.value,
       nombre,
       origen: f.origen.value,
@@ -408,7 +410,9 @@ async function addProducto(e) {
       stockMinimo: parseInt(f.stockMinimo.value) || 0,
       precio: parseFloat(f.precio.value) || 0,
       fotoPath: fotoPendiente,
-    });
+    };
+    await Claves.con(['producto', { ...producto, nombre: Claves.texto(nombre) }, productos.length],
+      clave => Datos.agregarProducto(clave, producto));
     const caja = f.cajaId.value;
     f.reset();
     f.cajaId.value = caja;                       // suele cargar varios de la misma caja seguidos
