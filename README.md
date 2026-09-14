@@ -56,7 +56,7 @@ Abrí la dirección que imprime: esa es la landing. Desde ahí, **Iniciar sesió
 | `css/landing.css`, `css/login.css`, `css/app.css` | Estilos propios de cada página |
 | `js/config.js` | URL y *publishable key* del proyecto de Supabase |
 | `js/sesion.js` | Abrir, leer y cerrar sesión contra Supabase Auth; lo usan el login y la app |
-| `js/datos.js` | Consultas a PostgreSQL y subida de fotos a Storage |
+| `js/datos.js` | Consultas a PostgreSQL y subida de fotos a Storage. Cada escritura lleva su clave, así un reintento no la repite (ver `sql/README.md`) |
 | `js/landing.js`, `js/login.js`, `js/app.js` | Lógica de cada página (la de la landing son solo animaciones) |
 | `sql/` | Scripts de la base, numerados e idempotentes: tablas, migraciones, índices, seguridad, cálculos, fotos, muestra y revisión (ver `sql/README.md`) |
 | `manifest.json`, `sw.js`, `icon.svg` | Soporte PWA (instalable, offline) |
