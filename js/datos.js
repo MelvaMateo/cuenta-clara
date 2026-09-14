@@ -43,7 +43,8 @@ const Datos = {
     const { data, error } = await sb
       .from('cajas_resumen')
       .select('*')
-      .order('fecha', { ascending: false });
+      .order('fecha', { ascending: false })
+      .order('id');                     // desempate: dos cajas del mismo día salen siempre en el mismo orden
     if (error) throw error;
     return data;
   },
@@ -88,7 +89,8 @@ const Datos = {
     const { data, error } = await sb
       .from('productos_costeados')
       .select('*')
-      .order('nombre');
+      .order('nombre')
+      .order('id');
     if (error) throw error;
     return data;
   },
@@ -178,7 +180,8 @@ const Datos = {
     const { data, error } = await sb
       .from('fiados')
       .select('id, clienta, descripcion, total, abonado, saldo, fecha')
-      .order('fecha', { ascending: false });
+      .order('fecha', { ascending: false })
+      .order('id');
     if (error) throw error;
     return data;
   },
