@@ -3,14 +3,16 @@
   "private": true,
   "description": "Solo para las pruebas: el sitio es estático y no instala nada para publicarse.",
   "scripts": {
-    "test": "npm run test:sintaxis && npm run test:sql",
+    "test": "npm run test:sintaxis && npm run test:sql && npm run test:ui",
     "test:sintaxis": "node tests/sintaxis.mjs",
-    "test:sql": "node tests/sql.test.mjs"
+    "test:sql": "node tests/sql.test.mjs",
+    "test:ui": "node tests/ui.test.mjs"
   },
   "engines": {
     "node": ">=20"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.8"
+    "@electric-sql/pglite": "^0.5.8",
+    "puppeteer-core": "^25.10.0"
   }
 }
