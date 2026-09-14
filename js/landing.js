@@ -183,3 +183,9 @@ const lempiras = n => 'L ' + Math.round(n).toLocaleString('en-US');
     if (entrada.intersectionRatio >= 0.3) vuelta();
   }, { threshold: [0, 0.3] }).observe(escena);
 })();
+
+/* PWA: la landing también registra el service worker, así la app se puede
+   instalar desde la primera página y abre sin internet. Solo por http(s). */
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
