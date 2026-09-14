@@ -1,0 +1,38 @@
+# CI: en cada push y en cada pull request, un robot de GitHub revisa la
+# sintaxis de los scripts, prueba los scripts de la base en un Postgres real
+# y prueba la app en Chrome. Si algo falla, el commit o el PR queda en rojo.
+#
+# CD: la publicación la hace Vercel, que está conectado al repo y publica
+# cada push a main en https://www.melvamateo.site (ver "CI/CD" en el README).
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Historial completo: las pruebas de migración usan los scripts viejos,
+      # sacados del historial de git.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # npm ci instala exactamente lo que dice package-lock.json.
+      - run: npm ci
+
+      - name: Sintaxis de los scripts del sitio
+        run: npm run test:sintaxis
+
+      - name: Scripts de la base (PGlite)
+        run: npm run test:sql
+
+      # Chrome ya viene instalado en los runners de Ubuntu.
+      - name: La app en Chrome
+        run: npm run test:ui

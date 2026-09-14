@@ -9,3 +9,6 @@ package.json
 package-lock.json
 node_modules/
 tests/
+
+# El pipeline de CI (GitHub Actions) tampoco es parte del sitio.
+.github/
