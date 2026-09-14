@@ -2,183 +2,314 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#b5179e">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <title>Cuenta Clara</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
-  <header>
-    <div class="header-top">
-      <h1>Cuenta Clara</h1>
-      <button class="salir" onclick="salir()">Salir</button>
+  <header class="barra-app">
+    <div class="barra-fila">
+      <div class="marca">
+        <img class="marca-icono" src="icon.svg" alt="">
+        <span class="marca-texto">Cuenta<b>Clara</b></span>
+      </div>
+      <div class="usuario">
+        <span class="avatar" id="avatar" aria-hidden="true">·</span>
+        <button class="salir" onclick="salir()">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+          Salir
+        </button>
+      </div>
     </div>
-    <p id="saludo">Tu negocio, con la cuenta clara</p>
+    <div class="saludo-bloque">
+      <p class="fecha" id="fechaHoy"></p>
+      <h1 id="saludo">Tu negocio, con la cuenta clara</h1>
+    </div>
   </header>
 
+  <nav class="tabbar" aria-label="Secciones">
+    <button class="tabbtn active" data-tab="cajas" onclick="showTab('cajas')">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 8 12 3 3 8l9 5 9-5Z"/><path d="M3 8v8l9 5 9-5V8"/><path d="M12 13v8"/></svg>
+      <span>Cajas</span>
+    </button>
+    <button class="tabbtn" data-tab="inventario" onclick="showTab('inventario')">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>
+      <span>Stock</span>
+    </button>
+    <button class="tabbtn" data-tab="fiados" onclick="showTab('fiados')">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="14" rx="3"/><path d="M3 10h18"/><path d="M16 15h2"/><path d="M7 6V4.5A1.5 1.5 0 0 1 8.5 3h7A1.5 1.5 0 0 1 17 4.5V6"/></svg>
+      <span>Fiados</span>
+    </button>
+    <button class="tabbtn" data-tab="resumen" onclick="showTab('resumen')">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20v-9"/><path d="M10 20V5"/><path d="M16 20v-6"/><path d="M22 20H2"/></svg>
+      <span>Resumen</span>
+    </button>
+  </nav>
+
   <main>
-    <!-- Errores de red o de permisos al hablar con Supabase. -->
-    <div id="aviso" class="aviso" role="alert"></div>
-
-    <!-- ===== Cajas ===== -->
+    <!-- ============================== Cajas ============================== -->
     <section id="cajas" class="tab active">
-      <form id="formCaja" class="form">
-        <h2>Registrar una caja</h2>
-        <input name="descripcion" placeholder="Nombre de la caja (ej. Caja agosto)" required>
-        <div class="row">
-          <label class="campo">Llegó
-            <input name="fecha" type="date">
-          </label>
-          <label class="campo">Tipo de cambio
-            <input name="tipoCambio" type="number" step="0.0001" placeholder="24.65" required>
-          </label>
+      <div class="encabezado-tab">
+        <div>
+          <h2>Tus cajas</h2>
+          <p>Lo que invertiste en cada una y cuánto llevás recuperado.</p>
         </div>
-        <p class="nota-form">El dólar al que lo pagaste de verdad: los lempiras que salieron de tu cuenta ÷ los dólares que recibiste. Queda fijo con esta caja, así los precios no cambian cada día.</p>
-
-        <p class="ayuda-form">Lo que pagaste, en la moneda en que lo pagaste:</p>
-        <div class="monto">
-          <label class="campo">Lote surtido
-            <input name="lote" type="number" step="0.01" min="0" placeholder="0.00">
-          </label>
-          <div class="moneda" role="radiogroup" aria-label="Moneda del lote">
-            <label><input type="radio" name="loteMoneda" value="USD" checked><span>$</span></label>
-            <label><input type="radio" name="loteMoneda" value="HNL"><span>L</span></label>
-          </div>
-        </div>
-        <div class="monto">
-          <label class="campo">Flete
-            <input name="flete" type="number" step="0.01" min="0" placeholder="0.00">
-          </label>
-          <div class="moneda" role="radiogroup" aria-label="Moneda del flete">
-            <label><input type="radio" name="fleteMoneda" value="USD" checked><span>$</span></label>
-            <label><input type="radio" name="fleteMoneda" value="HNL"><span>L</span></label>
-          </div>
-        </div>
-        <div class="monto">
-          <label class="campo">Aduana
-            <input name="aduana" type="number" step="0.01" min="0" placeholder="0.00">
-          </label>
-          <div class="moneda" role="radiogroup" aria-label="Moneda de la aduana">
-            <label><input type="radio" name="aduanaMoneda" value="USD"><span>$</span></label>
-            <label><input type="radio" name="aduanaMoneda" value="HNL" checked><span>L</span></label>
-          </div>
-        </div>
-        <div class="monto">
-          <label class="campo">Otros gastos
-            <input name="otros" type="number" step="0.01" min="0" placeholder="0.00">
-          </label>
-          <div class="moneda" role="radiogroup" aria-label="Moneda de otros gastos">
-            <label><input type="radio" name="otrosMoneda" value="USD" checked><span>$</span></label>
-            <label><input type="radio" name="otrosMoneda" value="HNL"><span>L</span></label>
-          </div>
-        </div>
-        <p class="nota-form">Lo comprado en tiendas de USA se suma solo, en dólares, desde cada producto que cargues.</p>
-
-        <div class="row">
-          <label class="campo">Ganancia que querés (%)
-            <input name="margen" type="number" step="1" min="0" value="40" required>
-          </label>
-          <label class="campo">Colchón por el dólar (%)
-            <input name="colchon" type="number" step="0.5" min="0" max="50" value="3">
-          </label>
-        </div>
-        <p class="nota-form">El colchón sube un poco los precios sugeridos de lo que pagaste en dólares, por si el dólar está más caro cuando vuelvas a comprar. No cambia lo que te costó la caja. Si vas a vender rápido, dejalo en 0.</p>
-
-        <button type="submit">Guardar caja</button>
-      </form>
-
-      <div id="listaCajas" class="lista"></div>
-    </section>
-
-    <!-- ===== Inventario ===== -->
-    <section id="inventario" class="tab">
-      <form id="formProducto" class="form">
-        <h2>Agregar producto</h2>
-
-        <label class="campo">¿De qué caja salió?
-          <select name="cajaId" id="selCaja" required></select>
-        </label>
-
-        <input name="nombre" placeholder="Nombre del producto" required>
-
-        <label class="campo">¿De dónde vino?
-          <select name="origen" id="selOrigen">
-            <option value="lote">Del lote surtido (no sé cuánto costó)</option>
-            <option value="tienda">Lo compré en una tienda (sé cuánto pagué)</option>
-          </select>
-        </label>
-
-        <label class="campo" id="lblValor">Valor estimado en US$
-          <input name="valorUsd" id="inpValor" type="number" step="0.01" placeholder="0.00" required>
-        </label>
-        <p class="nota-form" id="notaOrigen">
-          Si no sabés cuánto costó, poné lo que creés que vale. Solo importa que
-          esté bien en proporción a los demás: el total siempre queda anclado a
-          lo que pagaste por el lote.
-        </p>
-
-        <div class="row">
-          <label class="campo">Cantidad
-            <input name="cantidad" type="number" placeholder="1" required>
-          </label>
-          <label class="campo">Avisarme cuando queden
-            <input name="stockMinimo" type="number" placeholder="2">
-          </label>
-        </div>
-
-        <label class="campo">Precio de venta (L)
-          <input name="precio" id="inpPrecio" type="number" step="0.01" placeholder="0.00">
-        </label>
-        <div id="sugerencia" class="sugerencia"></div>
-
-        <label class="campo">Foto del producto
-          <input name="foto" id="inpFoto" type="file" accept="image/*" capture="environment">
-        </label>
-        <img id="vistaFoto" class="vista-foto" alt="">
-
-        <button type="submit">Guardar producto</button>
-      </form>
-
-      <input id="buscarProd" class="buscar" placeholder="Buscar producto...">
-      <div id="listaProductos" class="lista"></div>
-    </section>
-
-    <!-- ===== Fiados ===== -->
-    <section id="fiados" class="tab">
-      <div class="resumen-mini">Total por cobrar: <strong id="totalPorCobrar">L 0.00</strong></div>
-      <form id="formFiado" class="form">
-        <h2>Nuevo fiado</h2>
-        <input name="clienta" placeholder="¿Quién se lo lleva?" required>
-        <input name="descripcion" placeholder="¿Qué llevó? (opcional)">
-        <input name="monto" type="number" step="0.01" placeholder="Monto (L)" required>
-        <button type="submit">Guardar fiado</button>
-      </form>
-      <input id="buscarFiado" class="buscar" placeholder="Buscar por nombre...">
-      <div id="listaFiados" class="lista"></div>
-    </section>
-
-    <!-- ===== Resumen ===== -->
-    <section id="resumen" class="tab">
-      <h2>Resumen</h2>
-      <div class="grid">
-        <div class="stat"><span id="rPorCobrar">L 0.00</span><label>Por cobrar</label></div>
-        <div class="stat"><span id="rBajoStock">0</span><label>Bajo stock</label></div>
-        <div class="stat"><span id="rPorVender">L 0.00</span><label>Por vender</label></div>
-        <div class="stat"><span id="rProductos">0</span><label>Productos</label></div>
+        <button class="btn-nuevo" data-abre="panelCaja" data-etiqueta="Nueva caja"><b>+</b><span>Nueva caja</span></button>
       </div>
+
+      <div class="kpis" id="kpisCajas"></div>
+
+      <div class="columnas">
+        <div class="plegable" id="panelCaja">
+          <div class="plegable-interior">
+            <form id="formCaja" class="form">
+              <h3>Registrar una caja</h3>
+              <input name="descripcion" placeholder="Nombre de la caja (ej. Caja agosto)" required>
+              <div class="row">
+                <label class="campo">Llegó
+                  <input name="fecha" type="date">
+                </label>
+                <label class="campo">Tipo de cambio
+                  <input name="tipoCambio" type="number" step="0.0001" placeholder="24.65" required>
+                </label>
+              </div>
+              <p class="nota-form">El dólar al que lo pagaste de verdad: los lempiras que salieron de tu cuenta ÷ los dólares que recibiste. Queda fijo con esta caja, así los precios no cambian cada día.</p>
+
+              <p class="ayuda-form">Lo que pagaste, en la moneda en que lo pagaste</p>
+              <div class="monto">
+                <label class="campo">Lote surtido
+                  <input name="lote" type="number" step="0.01" min="0" placeholder="0.00">
+                </label>
+                <div class="moneda" role="radiogroup" aria-label="Moneda del lote">
+                  <label><input type="radio" name="loteMoneda" value="USD" checked><span>$</span></label>
+                  <label><input type="radio" name="loteMoneda" value="HNL"><span>L</span></label>
+                </div>
+              </div>
+              <div class="monto">
+                <label class="campo">Flete
+                  <input name="flete" type="number" step="0.01" min="0" placeholder="0.00">
+                </label>
+                <div class="moneda" role="radiogroup" aria-label="Moneda del flete">
+                  <label><input type="radio" name="fleteMoneda" value="USD" checked><span>$</span></label>
+                  <label><input type="radio" name="fleteMoneda" value="HNL"><span>L</span></label>
+                </div>
+              </div>
+              <div class="monto">
+                <label class="campo">Aduana
+                  <input name="aduana" type="number" step="0.01" min="0" placeholder="0.00">
+                </label>
+                <div class="moneda" role="radiogroup" aria-label="Moneda de la aduana">
+                  <label><input type="radio" name="aduanaMoneda" value="USD"><span>$</span></label>
+                  <label><input type="radio" name="aduanaMoneda" value="HNL" checked><span>L</span></label>
+                </div>
+              </div>
+              <div class="monto">
+                <label class="campo">Otros gastos
+                  <input name="otros" type="number" step="0.01" min="0" placeholder="0.00">
+                </label>
+                <div class="moneda" role="radiogroup" aria-label="Moneda de otros gastos">
+                  <label><input type="radio" name="otrosMoneda" value="USD" checked><span>$</span></label>
+                  <label><input type="radio" name="otrosMoneda" value="HNL"><span>L</span></label>
+                </div>
+              </div>
+              <p class="nota-form">Lo comprado en tiendas de USA se suma solo, en dólares, desde cada producto que cargues.</p>
+
+              <p class="ayuda-form">Tu ganancia</p>
+              <div class="row">
+                <label class="campo">Ganancia que querés (%)
+                  <input name="margen" type="number" step="1" min="0" value="40" required>
+                </label>
+                <label class="campo">Colchón por el dólar (%)
+                  <input name="colchon" type="number" step="0.5" min="0" max="50" value="3">
+                </label>
+              </div>
+              <p class="nota-form">El colchón sube un poco los precios sugeridos de lo que pagaste en dólares, por si el dólar está más caro cuando vuelvas a comprar. No cambia lo que te costó la caja. Si vas a vender rápido, dejalo en 0.</p>
+
+              <button type="submit">Guardar caja</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="col-lista">
+          <div id="listaCajas" class="lista">
+            <div class="esqueleto alto"></div>
+            <div class="esqueleto alto"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== Stock ============================== -->
+    <section id="inventario" class="tab">
+      <div class="encabezado-tab">
+        <div>
+          <h2>Tu stock</h2>
+          <p>Cuánto te costó cada cosa, a cuánto la vendés y qué se está acabando.</p>
+        </div>
+        <button class="btn-nuevo" data-abre="panelProducto" data-etiqueta="Agregar producto"><b>+</b><span>Agregar producto</span></button>
+      </div>
+
+      <div class="kpis" id="kpisStock"></div>
+
+      <div class="columnas">
+        <div class="plegable" id="panelProducto">
+          <div class="plegable-interior">
+            <form id="formProducto" class="form">
+              <h3>Agregar producto</h3>
+
+              <label class="campo">¿De qué caja salió?
+                <select name="cajaId" id="selCaja" required></select>
+              </label>
+
+              <input name="nombre" placeholder="Nombre del producto" required>
+
+              <label class="campo">¿De dónde vino?
+                <select name="origen" id="selOrigen">
+                  <option value="lote">Del lote surtido (no sé cuánto costó)</option>
+                  <option value="tienda">Lo compré en una tienda (sé cuánto pagué)</option>
+                </select>
+              </label>
+
+              <label class="campo" id="lblValor">Valor estimado en US$
+                <input name="valorUsd" id="inpValor" type="number" step="0.01" placeholder="0.00" required>
+              </label>
+              <p class="nota-form" id="notaOrigen">
+                Si no sabés cuánto costó, poné lo que creés que vale. Solo importa que
+                esté bien en proporción a los demás: el total siempre queda anclado a
+                lo que pagaste por el lote.
+              </p>
+
+              <div class="row">
+                <label class="campo">Cantidad
+                  <input name="cantidad" type="number" placeholder="1" required>
+                </label>
+                <label class="campo">Avisarme cuando queden
+                  <input name="stockMinimo" type="number" placeholder="2">
+                </label>
+              </div>
+
+              <label class="campo">Precio de venta (L)
+                <input name="precio" id="inpPrecio" type="number" step="0.01" placeholder="0.00">
+              </label>
+              <div id="sugerencia" class="sugerencia"></div>
+
+              <label class="campo foto-campo">
+                <span class="foto-boton">📷 Tomar o elegir una foto</span>
+                <input name="foto" id="inpFoto" type="file" accept="image/*" capture="environment">
+              </label>
+              <img id="vistaFoto" class="vista-foto" alt="">
+
+              <button type="submit">Guardar producto</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="col-lista">
+          <div class="herramientas">
+            <label class="buscador">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              <input id="buscarProd" class="buscar" placeholder="Buscar producto..." aria-label="Buscar producto">
+            </label>
+            <div class="chips" id="filtrosStock">
+              <button class="chip activo" data-filtro="todos">Todos <span>0</span></button>
+              <button class="chip" data-filtro="bajo">Bajo stock <span>0</span></button>
+              <button class="chip" data-filtro="perdida">Con pérdida <span>0</span></button>
+            </div>
+          </div>
+          <div id="listaProductos" class="lista">
+            <div class="esqueleto"></div>
+            <div class="esqueleto"></div>
+            <div class="esqueleto"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== Fiados ============================== -->
+    <section id="fiados" class="tab">
+      <div class="encabezado-tab">
+        <div>
+          <h2>Tus fiados</h2>
+          <p>Quién te debe, cuánto y lo que ya te fue abonando.</p>
+        </div>
+        <button class="btn-nuevo" data-abre="panelFiado" data-etiqueta="Nuevo fiado"><b>+</b><span>Nuevo fiado</span></button>
+      </div>
+
+      <div class="kpis" id="kpisFiados"></div>
+
+      <div class="columnas">
+        <div class="plegable" id="panelFiado">
+          <div class="plegable-interior">
+            <form id="formFiado" class="form">
+              <h3>Nuevo fiado</h3>
+              <input name="clienta" placeholder="¿Quién se lo lleva?" required>
+              <input name="descripcion" placeholder="¿Qué llevó? (opcional)">
+              <input name="monto" type="number" step="0.01" placeholder="Monto (L)" required>
+              <button type="submit">Guardar fiado</button>
+            </form>
+          </div>
+        </div>
+
+        <div class="col-lista">
+          <div class="herramientas">
+            <label class="buscador">
+              <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+              <input id="buscarFiado" class="buscar" placeholder="Buscar por nombre..." aria-label="Buscar por nombre">
+            </label>
+            <div class="chips" id="filtrosFiados">
+              <button class="chip activo" data-filtro="todos">Todos <span>0</span></button>
+              <button class="chip" data-filtro="pendientes">Te deben <span>0</span></button>
+              <button class="chip" data-filtro="pagados">Pagados <span>0</span></button>
+            </div>
+          </div>
+          <div id="listaFiados" class="lista">
+            <div class="esqueleto"></div>
+            <div class="esqueleto"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================== Resumen ============================== -->
+    <section id="resumen" class="tab">
+      <div class="encabezado-tab">
+        <div>
+          <h2>Resumen</h2>
+          <p>Cómo va el negocio, de un vistazo.</p>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat stat-cobrar"><span class="stat-ico">🧾</span><span class="stat-val" id="rPorCobrar">L 0</span><label>Por cobrar</label></div>
+        <div class="stat stat-vender"><span class="stat-ico">🏷️</span><span class="stat-val" id="rPorVender">L 0</span><label>Por vender</label></div>
+        <div class="stat stat-bajo"><span class="stat-ico">🔔</span><span class="stat-val" id="rBajoStock">0</span><label>Bajo stock</label></div>
+        <div class="stat stat-prod"><span class="stat-ico">📦</span><span class="stat-val" id="rProductos">0</span><label>Productos</label></div>
+      </div>
+
       <div id="alertaPerdida" class="alerta-perdida"></div>
+
+      <div class="paneles-resumen">
+        <div class="panel">
+          <h3>Recuperación por caja</h3>
+          <div id="rCajas"></div>
+        </div>
+        <div class="panel">
+          <h3>Para reponer</h3>
+          <div id="rReponer"></div>
+        </div>
+      </div>
     </section>
   </main>
 
-  <nav class="tabbar">
-    <button class="tabbtn active" data-tab="cajas" onclick="showTab('cajas')">Cajas</button>
-    <button class="tabbtn" data-tab="inventario" onclick="showTab('inventario')">Stock</button>
-    <button class="tabbtn" data-tab="fiados" onclick="showTab('fiados')">Fiados</button>
-    <button class="tabbtn" data-tab="resumen" onclick="showTab('resumen')">Resumen</button>
-  </nav>
+  <!-- Avisos: aparecen abajo y se van solos. -->
+  <div id="aviso" class="toast" role="status" aria-live="polite"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js"></script>
   <script src="js/config.js"></script>

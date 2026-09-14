@@ -9,17 +9,32 @@ async function salir() {
   location.replace('login.html');
 }
 
-const fmt = n => 'L ' + Number(n).toFixed(2);
-const usd = n => '$' + Number(n).toFixed(2);
+/* ===== Formatos ===== */
+const miles = (n, dec = 2) =>
+  Number(n).toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+const fmt = n => 'L ' + miles(n);                  // L 11,955.25
+const fmt0 = n => 'L ' + miles(Math.round(n), 0);  // L 11,955 (para los indicadores)
+const usd = n => '$' + miles(n);
 const pct = n => Math.round(Number(n) * 100) + '%';
 const pct1 = n => (Math.round(Number(n) * 1000) / 10) + '%';     // 0.025 → "2.5%"
 const monto = (v, moneda) => (moneda === 'USD' ? usd(v) : fmt(v));
+const entero = n => String(Math.round(n));
+
+/* Los nombres los escribe la usuaria: se escapan antes de meterlos en el HTML,
+   o un "<" en el nombre de un producto rompería la tarjeta. */
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const esEscritorio = () => window.matchMedia('(min-width: 960px)').matches;
 
 /* Copia en memoria de lo último que devolvió la base. */
 let cajas = [];
 let productos = [];
 let fiados = [];
 let fotoPendiente = null;                       // ruta en Storage de la foto ya subida
+let filtroStock = 'todos';
+let filtroFiados = 'todos';
 
 /* Traduce los errores de Supabase a algo que diga qué hacer. Un mensaje como
    "relation public.productos does not exist" no le sirve a nadie. */
@@ -44,21 +59,83 @@ function mensajeDe(error) {
   return error.message;
 }
 
-function avisar(msg) {
-  const caja = document.getElementById('aviso');
-  caja.textContent = msg;
-  caja.classList.add('visible');
+/* Avisos: una tarjetita que aparece abajo y se va sola. Antes estaba arriba de
+   todo y no se veía al guardar desde el final de un formulario largo. */
+function avisar(msg, tipo = 'error') {
+  const t = document.getElementById('aviso');
+  t.replaceChildren();
+  const ico = document.createElement('span');
+  ico.className = 'toast-ico';
+  ico.textContent = tipo === 'ok' ? '✓' : '!';
+  const texto = document.createElement('span');
+  texto.textContent = msg;
+  t.append(ico, texto);
+  t.className = `toast ${tipo} visible`;
   clearTimeout(avisar._t);
-  avisar._t = setTimeout(() => caja.classList.remove('visible'), 7000);
+  avisar._t = setTimeout(() => t.classList.remove('visible'), tipo === 'ok' ? 2800 : 7000);
 }
 
-/* ===== Navegación por pestañas ===== */
+/* Los números corren hasta su valor en vez de aparecer de golpe. */
+function contar(el, destino, formato) {
+  const desde = el.dataset.valor === undefined ? 0 : Number(el.dataset.valor);
+  el.dataset.valor = destino;
+  cancelAnimationFrame(el._cuadro);
+  if (quieto || desde === destino) { el.textContent = formato(destino); return; }
+  const inicio = performance.now();
+  const paso = ahora => {
+    const t = Math.min((ahora - inicio) / 700, 1);
+    const suave = 1 - Math.pow(1 - t, 3);
+    el.textContent = formato(desde + (destino - desde) * suave);
+    if (t < 1) el._cuadro = requestAnimationFrame(paso);
+  };
+  el._cuadro = requestAnimationFrame(paso);
+}
+
+/* Fila de indicadores de cada pestaña. */
+function pintarKpis(contId, items) {
+  const cont = document.getElementById(contId);
+  cont.innerHTML = items.map(k => `<div class="kpi ${k.tono || ''}">
+      <span class="kpi-ico">${k.ico}</span>
+      <b class="kpi-val">0</b>
+      <span class="kpi-lbl">${k.lbl}</span>
+      ${k.nota ? `<span class="kpi-nota">${k.nota}</span>` : ''}
+    </div>`).join('');
+  cont.querySelectorAll('.kpi-val').forEach((el, i) => contar(el, items[i].valor, items[i].formato || entero));
+}
+
+function vacio(ico, titulo, texto, panel, boton) {
+  return `<div class="vacio">
+    <span class="vacio-ico">${ico}</span>
+    <b>${titulo}</b>
+    <p>${texto}</p>
+    ${panel ? `<button class="btn-nuevo" onclick="alternarPanel('${panel}', true)"><b>+</b><span>${boton}</span></button>` : ''}
+  </div>`;
+}
+
+/* ===== Navegación ===== */
 function showTab(id) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tabbtn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tabbtn').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === id);
+    b.setAttribute('aria-current', b.dataset.tab === id ? 'page' : 'false');
+  });
   document.getElementById(id).classList.add('active');
-  document.querySelector(`[data-tab="${id}"]`).classList.add('active');
   if (id === 'resumen') renderResumen();
+  window.scrollTo({ top: 0, behavior: 'auto' });
+}
+
+/* Los formularios se pliegan detrás de su botón "+ Nuevo…". Cerrados quedan
+   inert: no se puede llegar a sus campos con el teclado. */
+function alternarPanel(id, abrir) {
+  const panel = document.getElementById(id);
+  const abierto = abrir ?? !panel.classList.contains('abierto');
+  panel.classList.toggle('abierto', abierto);
+  panel.inert = !abierto;
+  panel.parentElement.classList.toggle('con-form', abierto);
+  document.querySelectorAll(`[data-abre="${id}"]`).forEach(b => {
+    b.classList.toggle('activo', abierto);
+    b.querySelector('span').textContent = abierto ? 'Cerrar' : b.dataset.etiqueta;
+  });
 }
 
 /* ============================ Cajas ============================ */
@@ -96,6 +173,8 @@ async function addCaja(e) {
       colchon: colchon / 100,
     });
     f.reset();                                   // vuelve a 40% de ganancia y 3% de colchón
+    if (!esEscritorio()) alternarPanel('panelCaja', false);
+    avisar(`Caja "${descripcion}" guardada`, 'ok');
     await cargarCajas();
   } catch (error) {
     avisar('No se pudo guardar la caja: ' + mensajeDe(error));
@@ -113,63 +192,89 @@ async function cargarCajas() {
   }
   renderCajas();
   llenarSelectCajas();
+  if (document.getElementById('resumen').classList.contains('active')) renderResumen();
 }
 
 function renderCajas() {
+  const invertido = cajas.reduce((a, c) => a + Number(c.invertido), 0);
+  const vendido = cajas.reduce((a, c) => a + Number(c.vendido), 0);
+  const ganancia = cajas.reduce((a, c) => a + Number(c.ganancia_proyectada), 0);
+  pintarKpis('kpisCajas', [
+    { ico: '📦', lbl: 'Cajas', valor: cajas.length },
+    { ico: '💸', lbl: 'Invertiste', valor: invertido, formato: fmt0 },
+    { ico: '💰', lbl: 'Recuperado', valor: vendido, formato: fmt0,
+      nota: invertido > 0 ? pct(Math.min(vendido / invertido, 1)) : '' },
+    { ico: '📈', lbl: 'Ganás si vendés todo', valor: ganancia, formato: fmt0,
+      tono: ganancia < 0 ? 'malo' : 'bueno' },
+  ]);
+
   const cont = document.getElementById('listaCajas');
+  cont.classList.add('animar');
   if (cajas.length === 0) {
-    cont.innerHTML = '<p class="vacio">Todavía no registraste ninguna caja.</p>';
+    cont.innerHTML = vacio('📦', 'Todavía no registraste ninguna caja',
+      'Empezá cargando lo que pagaste por la última caja que trajiste.', 'panelCaja', 'Registrar caja');
     return;
   }
-  cont.innerHTML = cajas.map(c => {
-    const invertido = Number(c.invertido);
-    const vendido = Number(c.vendido);
-    const recuperado = invertido > 0 ? Math.min(vendido / invertido, 1) : 0;
-    const ganancia = Number(c.ganancia_proyectada);
-    const listo = vendido >= invertido;
+  cont.innerHTML = cajas.map((c, i) => {
+    const invertidoC = Number(c.invertido);
+    const vendidoC = Number(c.vendido);
+    const recuperado = invertidoC > 0 ? Math.min(vendidoC / invertidoC, 1) : 0;
+    const gananciaC = Number(c.ganancia_proyectada);
+    const listo = invertidoC > 0 && vendidoC >= invertidoC;
     const encarece = Math.round((Number(c.factor) - 1) * 100);
+    const fecha = new Date(c.fecha + 'T12:00:00')
+      .toLocaleDateString('es-HN', { day: 'numeric', month: 'short', year: 'numeric' });
+    const costos = [
+      ['Lote', monto(c.lote, c.lote_moneda)],
+      ['Tiendas', usd(c.tienda_usd)],
+      ...[['Flete', c.flete, c.flete_moneda], ['Aduana', c.aduana, c.aduana_moneda], ['Otros', c.otros, c.otros_moneda]]
+        .filter(([, valor]) => Number(valor) > 0)
+        .map(([nombre, valor, moneda]) => [nombre, monto(valor, moneda)]),
+    ];
 
-    return `<div class="caja-card ${listo ? 'recuperada' : ''}">
-      <div class="card-top">
-        <strong>${c.descripcion}</strong>
-        <span class="muted">${new Date(c.fecha + 'T12:00:00').toLocaleDateString('es-HN')}</span>
+    return `<article class="tarjeta caja-card ${listo ? 'recuperada' : ''}" style="--i:${i}">
+      <div class="caja-cab">
+        <div class="caja-ico">📦</div>
+        <div class="caja-tit">
+          <strong>${esc(c.descripcion)}</strong>
+          <span>${fecha} · dólar a ${Number(c.tipo_cambio).toFixed(2)}, guardado con esta caja</span>
+        </div>
+        <span class="estado ${listo ? 'ok' : 'curso'}">${listo ? 'Recuperada' : 'En curso'}</span>
       </div>
 
-      <div class="costos">
-        <div><span>Lote</span><b>${monto(c.lote, c.lote_moneda)}</b></div>
-        <div><span>Tiendas</span><b>${usd(c.tienda_usd)}</b></div>
-        ${[['Flete', c.flete, c.flete_moneda], ['Aduana', c.aduana, c.aduana_moneda], ['Otros', c.otros, c.otros_moneda]]
-          .filter(([, valor]) => Number(valor) > 0)
-          .map(([nombre, valor, moneda]) => `<div><span>${nombre}</span><b>${monto(valor, moneda)}</b></div>`)
-          .join('')}
-        <div class="total"><span>Invertiste</span><b>${fmt(invertido)}</b></div>
+      <div class="caja-progreso">
+        <div class="anillo" style="--p:${Math.round(recuperado * 100)}"><span>${pct(recuperado)}</span></div>
+        <div class="caja-prog-txt">
+          <span class="muted">Recuperado</span><br>
+          <b>${fmt(vendidoC)}</b> <span class="muted">de ${fmt(invertidoC)}</span>
+          ${listo
+            ? '<p class="ok-msg">Ya recuperaste esta caja: lo que vendas ahora es ganancia.</p>'
+            : `<p class="pendiente">Te faltan <b>${fmt(c.falta_recuperar)}</b> para recuperar lo que invertiste.</p>`}
+        </div>
       </div>
-      <p class="muted tc">Dólar a ${Number(c.tipo_cambio).toFixed(2)}, guardado con esta caja</p>
+
+      <div class="chips-costos">
+        ${costos.map(([n, v]) => `<span class="chip-costo"><i>${n}</i>${v}</span>`).join('')}
+        <span class="chip-costo total"><i>Invertiste</i>${fmt(invertidoC)}</span>
+      </div>
 
       <p class="factor">Traerla te encarece la mercadería un <b>${encarece}%</b>
          — cada $1 de producto te llega costando ${usd(c.factor)}</p>
 
-      <div class="colchon">
-        <span>Colchón por el dólar: <b>${pct1(c.colchon)}</b></span>
-        <button class="mini secundario" onclick="cambiarColchon('${c.id}')">Cambiar</button>
-      </div>
-
-      <div class="barra"><i style="width:${(recuperado * 100).toFixed(0)}%"></i></div>
-      <p class="muted">${pct(recuperado)} recuperado · vendido ${fmt(vendido)} de ${fmt(invertido)}</p>
-
-      ${listo
-        ? `<p class="ok-msg">Ya recuperaste esta caja. Todo lo que vendas de acá en
-             adelante es ganancia.</p>`
-        : `<p class="pendiente">Te faltan <b>${fmt(c.falta_recuperar)}</b> para recuperar lo que invertiste.</p>`}
-
-      <div class="proyeccion ${ganancia >= 0 ? '' : 'mala'}">
+      <div class="proyeccion ${gananciaC >= 0 ? '' : 'mala'}">
         Si vendés todo a los precios que pusiste:
-        <b>${ganancia >= 0 ? 'ganás ' : 'perdés '}${fmt(Math.abs(ganancia))}</b>
-        ${invertido > 0 ? `(${Math.round(ganancia / invertido * 100)}%)` : ''}
+        <b>${gananciaC >= 0 ? 'ganás ' : 'perdés '}${fmt(Math.abs(gananciaC))}</b>
+        ${invertidoC > 0 ? `(${Math.round(gananciaC / invertidoC * 100)}%)` : ''}
       </div>
 
-      <div class="muted">${c.productos} productos · ${c.unidades} unidades · quedan ${c.en_stock}</div>
-    </div>`;
+      <div class="caja-pie">
+        <div class="colchon">
+          <span>🛡️ Colchón por el dólar: <b>${pct1(c.colchon)}</b></span>
+          <button class="mini secundario" onclick="cambiarColchon('${c.id}')">Cambiar</button>
+        </div>
+        <span class="muted">${c.productos} productos · quedan ${c.en_stock} de ${c.unidades}</span>
+      </div>
+    </article>`;
   }).join('');
 }
 
@@ -189,6 +294,7 @@ async function cambiarColchon(id) {
   if (!(valor >= 0 && valor <= 50)) { avisar('El colchón tiene que estar entre 0 y 50%.'); return; }
   try {
     await Datos.cambiarColchon(id, valor / 100);
+    avisar(`Colchón de "${c.descripcion}" en ${valor}%`, 'ok');
     await Promise.all([cargarCajas(), cargarProductos()]);
   } catch (error) {
     avisar('No se pudo cambiar el colchón: ' + mensajeDe(error));
@@ -199,13 +305,13 @@ function llenarSelectCajas() {
   const sel = document.getElementById('selCaja');
   const elegida = sel.value;
   sel.innerHTML = cajas.length
-    ? cajas.map(c => `<option value="${c.id}">${c.descripcion}</option>`).join('')
+    ? cajas.map(c => `<option value="${c.id}">${esc(c.descripcion)}</option>`).join('')
     : '<option value="">Registrá una caja primero</option>';
   if (elegida) sel.value = elegida;
   calcularSugerido();
 }
 
-/* ============================ Inventario ============================ */
+/* ============================ Stock ============================ */
 
 /* Precio sugerido en vivo, mientras carga el producto: es el momento en que
    decide cuánto cobrar, y hoy lo hace sin saber lo que le costó traerlo.
@@ -265,12 +371,16 @@ async function elegirFoto(e) {
   const file = e.target.files && e.target.files[0];
   if (!file) return;
   const vista = document.getElementById('vistaFoto');
+  const etiqueta = document.querySelector('.foto-boton');
+  etiqueta.textContent = '⏳ Subiendo foto...';
   try {
     fotoPendiente = await Datos.subirFoto(file, sesion.user.id);
     vista.src = Datos.urlFoto(fotoPendiente);
     vista.classList.add('visible');
+    etiqueta.textContent = '📷 Cambiar la foto';
   } catch (error) {
     fotoPendiente = null;
+    etiqueta.textContent = '📷 Tomar o elegir una foto';
     avisar('No se pudo subir la foto: ' + mensajeDe(error));
   }
 }
@@ -299,10 +409,14 @@ async function addProducto(e) {
       precio: parseFloat(f.precio.value) || 0,
       fotoPath: fotoPendiente,
     });
+    const caja = f.cajaId.value;
     f.reset();
+    f.cajaId.value = caja;                       // suele cargar varios de la misma caja seguidos
     fotoPendiente = null;
     document.getElementById('vistaFoto').classList.remove('visible');
+    document.querySelector('.foto-boton').textContent = '📷 Tomar o elegir una foto';
     document.getElementById('sugerencia').className = 'sugerencia';
+    avisar(`"${nombre}" agregado al stock`, 'ok');
     await Promise.all([cargarProductos(), cargarCajas()]);   // la caja cambia al sumar producto
   } catch (error) {
     avisar('No se pudo guardar el producto: ' + mensajeDe(error));
@@ -318,6 +432,7 @@ async function venderProducto(id) {
   if (!cant || cant <= 0) return;
   try {
     await Datos.venderProducto(id, cant);
+    avisar(`Vendiste ${cant} × ${p.nombre}`, 'ok');
     await Promise.all([cargarProductos(), cargarCajas()]);
   } catch (error) {
     avisar(mensajeDe(error));                   // "No hay suficiente stock"
@@ -333,6 +448,7 @@ async function cambiarPrecio(id) {
   if (!(nuevo >= 0)) return;
   try {
     await Datos.cambiarPrecio(id, nuevo);
+    avisar(`Precio de "${p.nombre}": ${fmt(nuevo)}`, 'ok');
     await Promise.all([cargarProductos(), cargarCajas()]);
   } catch (error) {
     avisar('No se pudo cambiar el precio: ' + mensajeDe(error));
@@ -346,45 +462,82 @@ async function cargarProductos() {
     avisar('No se pudo leer el inventario: ' + mensajeDe(error));
     return;
   }
-  renderProductos();
+  const bajos = productos.filter(esBajo).length;
+  const perdiendo = productos.filter(conPerdida).length;
+  pintarKpis('kpisStock', [
+    { ico: '🏷️', lbl: 'Productos', valor: productos.length },
+    { ico: '📦', lbl: 'Unidades en stock', valor: productos.reduce((a, p) => a + Number(p.stock), 0) },
+    { ico: '🔔', lbl: 'Bajo stock', valor: bajos, tono: bajos ? 'aviso' : '' },
+    { ico: '⚠️', lbl: 'Con pérdida', valor: perdiendo, tono: perdiendo ? 'malo' : '' },
+  ]);
+  renderProductos(true);
+  if (document.getElementById('resumen').classList.contains('active')) renderResumen();
 }
 
-function renderProductos() {
+const esBajo = p => p.stock <= p.stock_minimo;
+const conPerdida = p => Number(p.precio) > 0 && Number(p.precio) < Number(p.costo_unitario);
+const FILTROS_STOCK = { todos: () => true, bajo: esBajo, perdida: conPerdida };
+
+function renderProductos(animar = false) {
   const q = (document.getElementById('buscarProd').value || '').toLowerCase();
-  const lista = productos.filter(p => p.nombre.toLowerCase().includes(q));
+  document.querySelectorAll('#filtrosStock .chip').forEach(ch => {
+    ch.classList.toggle('activo', ch.dataset.filtro === filtroStock);
+    ch.querySelector('span').textContent = productos.filter(FILTROS_STOCK[ch.dataset.filtro]).length;
+  });
+  const lista = productos
+    .filter(FILTROS_STOCK[filtroStock])
+    .filter(p => p.nombre.toLowerCase().includes(q));
+
   const cont = document.getElementById('listaProductos');
-  if (lista.length === 0) {
-    cont.innerHTML = '<p class="vacio">Sin productos todavía.</p>';
+  cont.classList.toggle('animar', animar);
+  if (productos.length === 0) {
+    cont.innerHTML = cajas.length
+      ? vacio('🏷️', 'Todavía no cargaste productos', 'Agregá lo que vino en tu caja: la app te dice a cuánto venderlo.', 'panelProducto', 'Agregar producto')
+      : vacio('📦', 'Primero registrá una caja', 'Los productos se cargan dentro de la caja en la que llegaron.', null);
     return;
   }
-  cont.innerHTML = lista.map(p => {
-    const bajo = p.stock <= p.stock_minimo;
-    const perdida = Number(p.precio) > 0 && Number(p.precio) < Number(p.costo_unitario);
+  if (lista.length === 0) {
+    cont.innerHTML = vacio('🔍', 'Nada coincide', 'Probá con otra búsqueda u otro filtro.', null);
+    return;
+  }
+  cont.innerHTML = lista.map((p, i) => {
+    const bajo = esBajo(p);
+    const perdida = conPerdida(p);
+    const costo = Number(p.costo_unitario);
+    const precio = Number(p.precio);
+    const margen = precio > 0 && costo > 0 ? (precio - costo) / costo : null;
     const foto = Datos.urlFoto(p.foto_path);
-    return `<div class="card ${perdida ? 'perdida' : bajo ? 'bajo' : ''}">
-      <div class="card-cuerpo">
-        ${foto ? `<img class="miniatura" src="${foto}" alt="">` : '<div class="miniatura vacia">📦</div>'}
-        <div class="card-datos">
-          <div class="card-top">
-            <strong>${p.nombre}</strong>
-            <span class="pill ${bajo ? 'pill-rojo' : ''}">quedan ${p.stock}${bajo ? ' !' : ''}</span>
-          </div>
-          <div class="muted">${p.caja} · ${p.origen === 'lote' ? 'del lote' : 'de tienda'}</div>
-          <div class="precios">
-            <span>Te cuesta <b>${fmt(p.costo_unitario)}</b></span>
-            <span>Lo vendés a <b>${fmt(p.precio)}</b></span>
-          </div>
-          ${perdida
-            ? `<div class="marca-perdida">⚠ Estás perdiendo ${fmt(p.costo_unitario - p.precio)} en cada uno.
-                 Sugerido: ${fmt(p.precio_sugerido)}</div>`
-            : `<div class="muted">Sugerido ${fmt(p.precio_sugerido)}</div>`}
+    const quedan = Number(p.cantidad) > 0 ? Math.min(p.stock / p.cantidad, 1) * 100 : 0;
+    return `<article class="tarjeta prod-card ${perdida ? 'perdida' : bajo ? 'bajo' : ''}" style="--i:${i}">
+      <div class="prod-foto">${foto ? `<img src="${foto}" alt="">` : '📦'}</div>
+      <div class="prod-info">
+        <div class="prod-cab">
+          <strong>${esc(p.nombre)}</strong>
+          ${margen === null
+            ? '<span class="margen sin">sin precio</span>'
+            : `<span class="margen ${margen >= 0 ? 'pos' : 'neg'}">${margen >= 0 ? '+' : ''}${Math.round(margen * 100)}%</span>`}
+        </div>
+        <div class="prod-sub">${esc(p.caja)} · <span class="origen">${p.origen === 'lote' ? 'del lote' : 'de tienda'}</span></div>
+
+        <div class="prod-precios">
+          <div><span>Costo</span><b>${fmt(costo)}</b></div>
+          <div><span>Precio</span><b>${fmt(precio)}</b></div>
+          <div><span>Sugerido</span><b>${fmt(p.precio_sugerido)}</b></div>
+        </div>
+
+        <div class="stock-linea">
+          <div class="barrita ${bajo ? 'roja' : ''}"><i style="width:${quedan.toFixed(0)}%"></i></div>
+          <span class="${bajo ? 'rojo' : ''}">Quedan ${p.stock} de ${p.cantidad}${bajo ? ' · reponer' : ''}</span>
+        </div>
+
+        ${perdida ? `<div class="marca-perdida">⚠ Perdés ${fmt(costo - precio)} en cada uno. Sugerido: ${fmt(p.precio_sugerido)}</div>` : ''}
+
+        <div class="acciones-card">
+          <button class="mini" onclick="venderProducto('${p.id}')">Vender</button>
+          <button class="mini secundario" onclick="cambiarPrecio('${p.id}')">Cambiar precio</button>
         </div>
       </div>
-      <div class="acciones-card">
-        <button class="mini" onclick="venderProducto('${p.id}')">Vender</button>
-        <button class="mini secundario" onclick="cambiarPrecio('${p.id}')">Cambiar precio</button>
-      </div>
-    </div>`;
+    </article>`;
   }).join('');
 }
 
@@ -404,6 +557,8 @@ async function addFiado(e) {
   try {
     await Datos.agregarFiado({ clienta, descripcion: f.descripcion.value.trim(), monto });
     f.reset();
+    if (!esEscritorio()) alternarPanel('panelFiado', false);
+    avisar(`Fiado de ${clienta} por ${fmt(monto)} anotado`, 'ok');
     await cargarFiados();
   } catch (error) {
     avisar('No se pudo guardar el fiado: ' + mensajeDe(error));
@@ -420,6 +575,7 @@ async function abonar(id) {
   if (m > Number(fi.saldo)) { avisar('El abono no puede ser mayor al saldo.'); return; }
   try {
     await Datos.abonar(id, m);
+    avisar(m === Number(fi.saldo) ? `${fi.clienta} terminó de pagar 🎉` : `Abono de ${fmt(m)} registrado`, 'ok');
     await cargarFiados();
   } catch (error) {
     avisar('No se pudo registrar el abono: ' + mensajeDe(error));
@@ -433,30 +589,66 @@ async function cargarFiados() {
     avisar('No se pudieron leer los fiados: ' + mensajeDe(error));
     return;
   }
-  renderFiados();
+  const pendientes = fiados.filter(f => Number(f.saldo) > 0);
+  pintarKpis('kpisFiados', [
+    { ico: '🧾', lbl: 'Por cobrar', valor: fiados.reduce((a, f) => a + Number(f.saldo), 0), formato: fmt0, tono: 'destacado' },
+    { ico: '👥', lbl: 'Te deben', valor: pendientes.length },
+    { ico: '✅', lbl: 'Pagados', valor: fiados.length - pendientes.length },
+    { ico: '💵', lbl: 'Ya cobrado', valor: fiados.reduce((a, f) => a + Number(f.abonado), 0), formato: fmt0 },
+  ]);
+  renderFiados(true);
+  if (document.getElementById('resumen').classList.contains('active')) renderResumen();
 }
 
-function renderFiados() {
+const FILTROS_FIADOS = {
+  todos: () => true,
+  pendientes: f => Number(f.saldo) > 0,
+  pagados: f => Number(f.saldo) <= 0,
+};
+
+/* Un color estable por persona, para que su círculo sea siempre el mismo. */
+const tonoDe = nombre => [...String(nombre)].reduce((a, c) => a + c.charCodeAt(0), 0) * 37 % 360;
+const inicialesDe = nombre => String(nombre).trim().split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase();
+
+function renderFiados(animar = false) {
   const q = (document.getElementById('buscarFiado').value || '').toLowerCase();
-  const lista = fiados.filter(f => (f.clienta || '').toLowerCase().includes(q));
+  document.querySelectorAll('#filtrosFiados .chip').forEach(ch => {
+    ch.classList.toggle('activo', ch.dataset.filtro === filtroFiados);
+    ch.querySelector('span').textContent = fiados.filter(FILTROS_FIADOS[ch.dataset.filtro]).length;
+  });
+  const lista = fiados
+    .filter(FILTROS_FIADOS[filtroFiados])
+    .filter(f => (f.clienta || '').toLowerCase().includes(q));
+
   const cont = document.getElementById('listaFiados');
-  const total = lista.reduce((a, f) => a + Number(f.saldo), 0);
-  document.getElementById('totalPorCobrar').textContent = fmt(total);
-  if (lista.length === 0) {
-    cont.innerHTML = '<p class="vacio">Sin fiados.</p>';
+  cont.classList.toggle('animar', animar);
+  if (fiados.length === 0) {
+    cont.innerHTML = vacio('🤝', 'Nadie te debe nada', 'Cuando fíes algo, anotalo acá y llevá la cuenta de los abonos.', 'panelFiado', 'Anotar fiado');
     return;
   }
-  cont.innerHTML = lista.map(f => {
+  if (lista.length === 0) {
+    cont.innerHTML = filtroFiados === 'pendientes'
+      ? vacio('🎉', 'Nadie te debe nada', 'Todos los fiados están pagados.', null)
+      : vacio('🔍', 'Nada coincide', 'Probá con otro nombre u otro filtro.', null);
+    return;
+  }
+  cont.innerHTML = lista.map((f, i) => {
     const pagado = Number(f.saldo) <= 0;
-    const fecha = new Date(f.fecha).toLocaleDateString('es-HN');
-    return `<div class="card ${pagado ? 'pagado' : ''}">
-      <div class="card-top">
-        <strong>${f.clienta}</strong>
-        <span class="pill ${pagado ? 'pill-verde' : 'pill-rojo'}">${pagado ? 'PAGADO' : fmt(f.saldo)}</span>
+    const avance = Number(f.total) > 0 ? Math.min(Number(f.abonado) / Number(f.total), 1) * 100 : 0;
+    const fecha = new Date(f.fecha).toLocaleDateString('es-HN', { day: 'numeric', month: 'short' });
+    return `<article class="tarjeta fiado-card ${pagado ? 'pagado' : ''}" style="--i:${i}">
+      <span class="avatar-cli" style="--h:${tonoDe(f.clienta)}">${esc(inicialesDe(f.clienta))}</span>
+      <div class="fiado-info">
+        <div class="fiado-cab">
+          <strong>${esc(f.clienta)}</strong>
+          <span class="pill ${pagado ? 'pill-verde' : 'pill-rojo'}">${pagado ? 'PAGADO' : fmt(f.saldo)}</span>
+        </div>
+        <div class="fiado-sub">${esc(f.descripcion) || '—'} · ${fecha}</div>
+        <div class="barrita ${pagado ? 'verde' : ''}"><i style="width:${avance.toFixed(0)}%"></i></div>
+        <div class="muted">Abonó ${fmt(f.abonado)} de ${fmt(f.total)}</div>
+        ${pagado ? '' : `<div class="acciones-card"><button class="mini" onclick="abonar('${f.id}')">Registrar abono</button></div>`}
       </div>
-      <div class="muted">${f.descripcion || '—'} · ${fecha} · debía ${fmt(f.total)}</div>
-      ${pagado ? '' : `<button class="mini" onclick="abonar('${f.id}')">Registrar abono</button>`}
-    </div>`;
+    </article>`;
   }).join('');
 }
 
@@ -464,23 +656,40 @@ function renderFiados() {
 
 function renderResumen() {
   const porCobrar = fiados.reduce((a, f) => a + Number(f.saldo), 0);
-  const bajoStock = productos.filter(p => p.stock <= p.stock_minimo).length;
+  const bajos = productos.filter(esBajo);
   /* Lo que queda por vender, a precio de venta: es lo que le importa cobrar,
      no un valor al costo. */
   const porVender = productos.reduce((a, p) => a + p.stock * Number(p.precio), 0);
-  document.getElementById('rPorCobrar').textContent = fmt(porCobrar);
-  document.getElementById('rBajoStock').textContent = bajoStock;
-  document.getElementById('rPorVender').textContent = fmt(porVender);
-  document.getElementById('rProductos').textContent = productos.length;
+  contar(document.getElementById('rPorCobrar'), porCobrar, fmt0);
+  contar(document.getElementById('rPorVender'), porVender, fmt0);
+  contar(document.getElementById('rBajoStock'), bajos.length, entero);
+  contar(document.getElementById('rProductos'), productos.length, entero);
 
-  const perdiendo = productos.filter(p => Number(p.precio) > 0
-                                       && Number(p.precio) < Number(p.costo_unitario));
-  const caja = document.getElementById('alertaPerdida');
-  caja.className = perdiendo.length ? 'alerta-perdida visible' : 'alerta-perdida';
-  caja.innerHTML = perdiendo.length
-    ? `<b>⚠ ${perdiendo.length} producto${perdiendo.length > 1 ? 's se están' : ' se está'}
-         vendiendo por debajo del costo:</b><br>${perdiendo.map(p => p.nombre).join(', ')}`
+  const perdiendo = productos.filter(conPerdida);
+  const alerta = document.getElementById('alertaPerdida');
+  alerta.className = perdiendo.length ? 'alerta-perdida visible' : 'alerta-perdida';
+  alerta.innerHTML = perdiendo.length
+    ? `<span class="alerta-ico">⚠️</span><div><b>${perdiendo.length} producto${perdiendo.length > 1 ? 's se están' : ' se está'}
+         vendiendo por debajo del costo:</b><br>${perdiendo.map(p => esc(p.nombre)).join(', ')}</div>`
     : '';
+
+  document.getElementById('rCajas').innerHTML = cajas.length
+    ? cajas.map(c => {
+        const inv = Number(c.invertido);
+        const r = inv > 0 ? Math.min(Number(c.vendido) / inv, 1) : 0;
+        return `<div class="rec">
+          <div class="rec-cab"><span>${esc(c.descripcion)}</span><b>${pct(r)}</b></div>
+          <div class="barrita ${r >= 1 ? 'verde' : ''}"><i style="width:${(r * 100).toFixed(0)}%"></i></div>
+        </div>`;
+      }).join('')
+    : '<p class="muted">Todavía no hay cajas.</p>';
+
+  document.getElementById('rReponer').innerHTML = bajos.length
+    ? bajos.map(p => `<div class="reponer">
+        <span>${esc(p.nombre)}</span>
+        <span class="pill pill-rojo">quedan ${p.stock}</span>
+      </div>`).join('')
+    : '<p class="todo-bien">✓ Todo tu stock está por encima del mínimo.</p>';
 }
 
 /* ============================ Inicio ============================ */
@@ -489,20 +698,46 @@ document.addEventListener('DOMContentLoaded', async () => {
   sesion = await exigirSesion();
   if (!sesion) return;
 
-  document.getElementById('saludo').textContent = `Hola, ${Sesion.nombreDe(sesion)}`;
+  const nombre = Sesion.nombreDe(sesion);
+  document.getElementById('saludo').textContent = `Hola, ${nombre.split(/\s+/)[0]} 👋`;
+  document.getElementById('avatar').textContent = nombre.trim().charAt(0).toUpperCase();
+  document.getElementById('fechaHoy').textContent =
+    new Date().toLocaleDateString('es-HN', { weekday: 'long', day: 'numeric', month: 'long' });
+
   document.getElementById('formCaja').addEventListener('submit', addCaja);
   document.getElementById('formProducto').addEventListener('submit', addProducto);
   document.getElementById('formFiado').addEventListener('submit', addFiado);
-  document.getElementById('buscarProd').addEventListener('input', renderProductos);
-  document.getElementById('buscarFiado').addEventListener('input', renderFiados);
+  document.getElementById('buscarProd').addEventListener('input', () => renderProductos());
+  document.getElementById('buscarFiado').addEventListener('input', () => renderFiados());
   document.getElementById('selOrigen').addEventListener('change', ajustarOrigen);
   document.getElementById('selCaja').addEventListener('change', calcularSugerido);
   document.getElementById('inpValor').addEventListener('input', calcularSugerido);
   document.getElementById('inpPrecio').addEventListener('input', calcularSugerido);
   document.getElementById('inpFoto').addEventListener('change', elegirFoto);
 
+  document.querySelectorAll('[data-abre]').forEach(b =>
+    b.addEventListener('click', () => alternarPanel(b.dataset.abre)));
+  document.getElementById('filtrosStock').addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (chip) { filtroStock = chip.dataset.filtro; renderProductos(true); }
+  });
+  document.getElementById('filtrosFiados').addEventListener('click', e => {
+    const chip = e.target.closest('.chip');
+    if (chip) { filtroFiados = chip.dataset.filtro; renderFiados(true); }
+  });
+
+  /* En computadora los formularios arrancan abiertos, al lado de la lista.
+     En el celular, cerrados, salvo que no haya nada cargado todavía. */
+  const escritorio = esEscritorio();
+  ['panelCaja', 'panelProducto', 'panelFiado'].forEach(id => alternarPanel(id, escritorio));
+
   await cargarCajas();
   await Promise.all([cargarProductos(), cargarFiados()]);
+
+  if (!escritorio) {
+    if (cajas.length === 0) alternarPanel('panelCaja', true);
+    if (cajas.length > 0 && productos.length === 0) alternarPanel('panelProducto', true);
+  }
 });
 
 /* PWA: registra el service worker solo cuando se sirve por http(s) */

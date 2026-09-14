@@ -23,7 +23,7 @@ const Datos = {
   async agregarCaja(caja) {
     const { data, error } = await sb.from('cajas').insert({
       descripcion: caja.descripcion,
-      fecha: caja.fecha || new Date().toISOString().slice(0, 10),
+      fecha: caja.fecha || new Date().toLocaleDateString('en-CA'),   // AAAA-MM-DD en hora local: en UTC, de noche en Honduras ya es mañana
       lote: caja.lote || 0,
       lote_moneda: caja.loteMoneda,
       flete: caja.flete || 0,
