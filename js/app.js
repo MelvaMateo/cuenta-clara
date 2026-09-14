@@ -386,6 +386,9 @@ function ajustarOrigen() {
 async function elegirFoto(e) {
   const file = e.target.files && e.target.files[0];
   if (!file) return;
+  /* Se vacía para que elegir la misma foto otra vez, por ejemplo después de un
+     corte, vuelva a disparar el cambio: si no, el navegador no avisa nada. */
+  e.target.value = '';
   const vista = document.getElementById('vistaFoto');
   const etiqueta = document.querySelector('.foto-boton');
   etiqueta.textContent = '⏳ Subiendo foto...';

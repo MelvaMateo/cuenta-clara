@@ -144,14 +144,20 @@ const Datos = {
     });
   },
 
-  /* Cada usuaria sube dentro de su propia carpeta: el RLS del bucket lo exige. */
+  /* Cada usuaria sube dentro de su propia carpeta: el RLS del bucket lo exige.
+     El nombre del archivo sale de su contenido (SHA-256): la misma foto va
+     siempre al mismo lugar. Si ya estaba, porque un intento anterior subió
+     pero la respuesta no llegó, se toma como subida en vez de dejar otra copia. */
   async subirFoto(file, userId) {
     const blob = await this.comprimirImagen(file);
-    const ruta = `${userId}/${crypto.randomUUID()}.jpg`;
+    const huella = await crypto.subtle.digest('SHA-256', await blob.arrayBuffer());
+    const hex = [...new Uint8Array(huella)].map(b => b.toString(16).padStart(2, '0')).join('');
+    const ruta = `${userId}/${hex}.jpg`;
     const { error } = await sb.storage
       .from('fotos')
       .upload(ruta, blob, { contentType: 'image/jpeg' });
-    if (error) throw error;
+    const yaEstaba = error && (String(error.statusCode) === '409' || /already exists|duplicate/i.test(error.message));
+    if (error && !yaEstaba) throw error;
     return ruta;
   },
 
