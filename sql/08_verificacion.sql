@@ -21,7 +21,8 @@ referencias(nombre) as (
 ),
 operaciones(firma) as (
   values ('public.vender_producto(uuid,uuid,integer)'),
-         ('public.registrar_fiado(uuid,text,text,numeric)')
+         ('public.registrar_fiado(uuid,text,text,numeric)'),
+         ('public.registrar_abono(uuid,uuid,numeric)')
 ),
 cruzadas(que, n) as (
   select 'producto → caja', count(*) from public.productos p join public.cajas c on c.id = p.caja_id where c.owner_id <> p.owner_id

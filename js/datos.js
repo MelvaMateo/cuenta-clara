@@ -177,8 +177,13 @@ const Datos = {
     if (error) throw error;
   },
 
-  async abonar(ventaId, monto) {
-    const { error } = await sb.from('abonos').insert({ venta_id: ventaId, monto });
+  /* El abono y el control de no pasarse del saldo van juntos en la base. La
+     clave es el id del abono. Devuelve el saldo que queda. */
+  async abonar(clave, ventaId, monto) {
+    const { data, error } = await sb.rpc('registrar_abono', {
+      p_abono: clave, p_venta: ventaId, p_monto: monto,
+    });
     if (error) throw error;
+    return Number(data);
   },
 };

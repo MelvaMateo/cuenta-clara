@@ -280,5 +280,62 @@ end $$;
 revoke all on function public.registrar_fiado(uuid, text, text, numeric) from public, anon;
 grant execute on function public.registrar_fiado(uuid, text, text, numeric) to authenticated;
 
+-- ------------------------------------------------------------------ abono
+-- Registra un abono sin pasarse de lo que se debe. Antes eso solo lo revisaba
+-- la app: un reintento sumaba el abono dos veces, y dos abonos a la vez podían
+-- dejar el saldo en negativo. La clave es el id del abono. Devuelve el saldo
+-- que queda.
+create or replace function public.registrar_abono(p_abono uuid, p_venta uuid, p_monto numeric)
+returns numeric
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  v_monto   numeric(10,2) := round(p_monto, 2);
+  v_owner   uuid;
+  v_total   numeric(10,2);
+  v_abonado numeric(10,2);
+begin
+  if p_abono is null then
+    raise exception 'Falta la clave del abono';
+  end if;
+  if v_monto is null or v_monto <= 0 then
+    raise exception 'El abono debe ser mayor que cero';
+  end if;
+
+  -- Bloquea el fiado hasta el final: dos abonos a la vez no pueden pasarse
+  -- del saldo, y un reintento espera a que termine el primero.
+  select owner_id, total into v_owner, v_total
+    from ventas
+   where id = p_venta and es_fiada
+     for update;
+  if not found then
+    raise exception 'No existe el fiado';
+  end if;
+
+  select coalesce(sum(monto), 0) into v_abonado from abonos where venta_id = p_venta;
+
+  -- Ya registrado con esta clave: no se suma dos veces.
+  if exists (select 1 from abonos where id = p_abono) then
+    if exists (select 1 from abonos where id = p_abono and venta_id = p_venta and monto = v_monto) then
+      return v_total - v_abonado;
+    end if;
+    raise exception 'Este abono ya se registró con otros datos';
+  end if;
+
+  if v_monto > v_total - v_abonado then
+    raise exception 'El abono (L %) es mayor que el saldo (L %)', v_monto, v_total - v_abonado;
+  end if;
+
+  insert into abonos (id, owner_id, venta_id, monto)
+       values (p_abono, v_owner, p_venta, v_monto);
+
+  return v_total - v_abonado - v_monto;
+end $$;
+
+revoke all on function public.registrar_abono(uuid, uuid, numeric) from public, anon;
+grant execute on function public.registrar_abono(uuid, uuid, numeric) to authenticated;
+
 -- La API de Supabase vuelve a leer la estructura.
 notify pgrst, 'reload schema';

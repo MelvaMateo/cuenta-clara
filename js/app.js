@@ -577,8 +577,9 @@ async function abonar(id) {
   if (!m || m <= 0) return;
   if (m > Number(fi.saldo)) { avisar('El abono no puede ser mayor al saldo.'); return; }
   try {
-    await Datos.abonar(id, m);
-    avisar(m === Number(fi.saldo) ? `${fi.clienta} terminó de pagar 🎉` : `Abono de ${fmt(m)} registrado`, 'ok');
+    const saldo = await Claves.con(['abono', id, m, fi.saldo],
+      clave => Datos.abonar(clave, id, m));
+    avisar(saldo <= 0 ? `${fi.clienta} terminó de pagar 🎉` : `Abono de ${fmt(m)} registrado`, 'ok');
     await cargarFiados();
   } catch (error) {
     avisar('No se pudo registrar el abono: ' + mensajeDe(error));
