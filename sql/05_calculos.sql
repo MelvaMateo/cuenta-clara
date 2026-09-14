@@ -148,12 +148,26 @@ grant select on public.cajas_calculo, public.cajas_resumen, public.productos_cos
 revoke all on public.cajas_calculo, public.cajas_resumen, public.productos_costeados, public.fiados
   from anon;
 
+-- ---------------------------------------------------------- operaciones
+-- Lo que toca varias filas, o suma y resta sobre lo que ya hay, se hace con
+-- una función: corre en una sola transacción, así queda todo o nada.
+--
+-- Todas son idempotentes. La app genera la clave de cada operación (el id de
+-- la fila que va a crear) y la manda otra vez si reintenta: si la base ya la
+-- había registrado, responde lo mismo sin repetirla. Si la misma clave llega
+-- con otros datos, es un error y no se registra nada.
+--
+-- security invoker: corren con los permisos de quien las llama, así el RLS
+-- solo deja tocar lo propio.
+
 -- ------------------------------------------------------- venta de producto
 -- Descuenta stock y deja registrada la venta, para que la caja sepa cuánto
--- lleva recuperado. El "where stock >= cantidad" hace imposible vender de más.
--- security invoker: corre con los permisos de quien la llama, así el RLS
--- solo le deja vender sus propios productos.
-create or replace function public.vender_producto(p_id uuid, p_cantidad integer)
+-- lleva recuperado. Devuelve el stock que queda.
+-- La versión anterior no tenía clave: si se cortaba la conexión después de
+-- vender y se reintentaba, el stock se descontaba dos veces.
+drop function if exists public.vender_producto(uuid, integer);
+
+create or replace function public.vender_producto(p_venta uuid, p_producto uuid, p_cantidad integer)
 returns integer
 language plpgsql
 security invoker
@@ -163,35 +177,54 @@ declare
   v_stock  integer;
   v_precio numeric(10,2);
   v_owner  uuid;
-  v_venta  uuid;
 begin
+  if p_venta is null then
+    raise exception 'Falta la clave de la venta';
+  end if;
   if p_cantidad is null or p_cantidad <= 0 then
     raise exception 'La cantidad debe ser mayor que cero';
   end if;
 
-  update public.productos
-     set stock = stock - p_cantidad
-   where id = p_id and stock >= p_cantidad
-  returning stock, precio, owner_id into v_stock, v_precio, v_owner;
-
+  -- Bloquea el producto hasta el final: dos ventas a la vez no pueden leer el
+  -- mismo stock, y un reintento espera a que termine la primera.
+  select stock, precio, owner_id into v_stock, v_precio, v_owner
+    from public.productos
+   where id = p_producto
+     for update;
   if not found then
+    raise exception 'No existe el producto';
+  end if;
+
+  -- Ya registrada con esta clave: no se vende dos veces.
+  if exists (select 1 from public.ventas where id = p_venta) then
+    if exists (select 1 from public.detalle_venta
+                where venta_id = p_venta and producto_id = p_producto and cantidad = p_cantidad) then
+      return v_stock;
+    end if;
+    raise exception 'Esta venta ya se registró con otros datos';
+  end if;
+
+  if v_stock < p_cantidad then
     raise exception 'No hay suficiente stock';
   end if;
 
-  insert into public.ventas (owner_id, total, canal, es_fiada)
-       values (v_owner, v_precio * p_cantidad, 'local', false)
-    returning id into v_venta;
+  update public.productos
+     set stock = stock - p_cantidad
+   where id = p_producto
+  returning stock into v_stock;
+
+  insert into public.ventas (id, owner_id, total, canal, es_fiada)
+       values (p_venta, v_owner, v_precio * p_cantidad, 'local', false);
 
   insert into public.detalle_venta (owner_id, venta_id, producto_id, cantidad, precio_unit)
-       values (v_owner, v_venta, p_id, p_cantidad, v_precio);
+       values (v_owner, p_venta, p_producto, p_cantidad, v_precio);
 
   return v_stock;
 end $$;
 
--- Solo con la sesión iniciada. Antes cualquiera con la llave pública podía
--- llamarla (el RLS no la dejaba tocar nada, pero respondía).
-revoke all on function public.vender_producto(uuid, integer) from public, anon;
-grant execute on function public.vender_producto(uuid, integer) to authenticated;
+-- Solo con la sesión iniciada.
+revoke all on function public.vender_producto(uuid, uuid, integer) from public, anon;
+grant execute on function public.vender_producto(uuid, uuid, integer) to authenticated;
 
 -- La API de Supabase vuelve a leer la estructura.
 notify pgrst, 'reload schema';

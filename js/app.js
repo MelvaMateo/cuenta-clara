@@ -49,7 +49,7 @@ function mensajeDe(error) {
     return 'Faltan las tablas en Supabase: corré en orden los scripts de sql/, del 01 al 06.';
   }
   if (codigo === '42883' || codigo === 'PGRST202') {
-    return 'Falta la función vender_producto: corré sql/05_calculos.sql en el SQL Editor.';
+    return 'Falta una función de la base (o es de una versión anterior): corré sql/05_calculos.sql en el SQL Editor.';
   }
   if (codigo === '42501') return 'La base rechazó la operación por permisos (RLS).';
   if (/bucket not found/i.test(error.message)) {
@@ -431,7 +431,8 @@ async function venderProducto(id) {
   const cant = parseInt(prompt(`¿Cuántas unidades de "${p.nombre}" vendiste?`, '1'));
   if (!cant || cant <= 0) return;
   try {
-    await Datos.venderProducto(id, cant);
+    await Claves.con(['vender', id, cant, p.stock],
+      clave => Datos.venderProducto(clave, id, cant));
     avisar(`Vendiste ${cant} × ${p.nombre}`, 'ok');
     await Promise.all([cargarProductos(), cargarCajas()]);
   } catch (error) {

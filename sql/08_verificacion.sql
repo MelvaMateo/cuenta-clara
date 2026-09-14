@@ -92,10 +92,13 @@ revisiones(orden, grupo, revision, estado, detalle) as (
    where schemaname = 'public' and policyname = 'solo lo propio'
   union all
   select 7, 'Seguridad', 'Solo con sesión se puede vender',
-         case when to_regprocedure('public.vender_producto(uuid,integer)') is null then 'error'
-              when has_function_privilege('anon', 'public.vender_producto(uuid,integer)', 'execute') then 'error'
+         case when to_regprocedure('public.vender_producto(uuid,uuid,integer)') is null then 'error'
+              when to_regprocedure('public.vender_producto(uuid,integer)') is not null then 'error'
+              when has_function_privilege('anon', 'public.vender_producto(uuid,uuid,integer)', 'execute') then 'error'
               else 'ok' end,
-         case when to_regprocedure('public.vender_producto(uuid,integer)') is null then 'falta la función' else '' end
+         case when to_regprocedure('public.vender_producto(uuid,uuid,integer)') is null then 'falta la función con clave de venta'
+              when to_regprocedure('public.vender_producto(uuid,integer)') is not null then 'queda la versión sin clave'
+              else '' end
   union all
   select 8, 'Seguridad', 'Fotos: cada cuenta lista solo las suyas',
          case when exists (select 1 from pg_policies where schemaname = 'storage' and policyname = 'ver fotos propias')

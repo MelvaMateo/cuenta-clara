@@ -7,6 +7,30 @@
    Cada consulta devuelve solo las filas de quien inició sesión, porque las
    políticas RLS filtran por owner_id. */
 
+/* Claves de idempotencia.
+
+   Cada operación que escribe lleva una clave (un UUID) que se genera una sola
+   vez. Si la conexión se corta y no se sabe si la base alcanzó a guardar, al
+   reintentar viaja la misma clave y la base no repite la operación: una venta
+   no descuenta el stock dos veces.
+
+   La clave sale de la "firma" de la operación: qué se hace, con qué datos y
+   sobre qué estado (por ejemplo, el stock que se veía al vender). Reintentar
+   lo mismo reusa la clave; otra operación, aunque se parezca, lleva otra: una
+   vez que la venta entra, el stock cambia, y vender otra unidad es otra firma.
+   La clave se suelta cuando la base confirma. */
+const Claves = {
+  pendientes: new Map(),
+
+  async con(firma, operacion) {
+    const llave = JSON.stringify(firma);
+    if (!this.pendientes.has(llave)) this.pendientes.set(llave, crypto.randomUUID());
+    const resultado = await operacion(this.pendientes.get(llave));
+    this.pendientes.delete(llave);
+    return resultado;
+  },
+};
+
 const Datos = {
 
   /* ===== Cajas ===== */
@@ -79,11 +103,15 @@ const Datos = {
     if (error) throw error;
   },
 
-  /* Descuenta stock y registra la venta en una sola sentencia, para que la
-     caja sepa cuánto lleva recuperado y no se pueda vender de más. */
-  async venderProducto(id, cantidad) {
-    const { error } = await sb.rpc('vender_producto', { p_id: id, p_cantidad: cantidad });
+  /* Descuenta stock y registra la venta en una sola transacción, para que la
+     caja sepa cuánto lleva recuperado y no se pueda vender de más. La clave
+     es el id de la venta. Devuelve el stock que queda. */
+  async venderProducto(clave, id, cantidad) {
+    const { data, error } = await sb.rpc('vender_producto', {
+      p_venta: clave, p_producto: id, p_cantidad: cantidad,
+    });
     if (error) throw error;
+    return data;
   },
 
   /* ===== Fotos ===== */
