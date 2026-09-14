@@ -35,12 +35,18 @@ cruzadas(que, n) as (
   union all
   select 'abono → venta', count(*) from public.abonos a join public.ventas v on v.id = a.venta_id where v.owner_id <> a.owner_id
 ),
+-- La misma regla que texto_canonico (01), escrita acá: si falta 01, la
+-- revisión lo avisa en vez de fallar porque no existe la función.
 sin_normalizar(n) as (
-  select (select count(*) from public.cajas     where descripcion is distinct from public.texto_canonico(descripcion))
-       + (select count(*) from public.productos where nombre      is distinct from public.texto_canonico(nombre))
-       + (select count(*) from public.clientas  where nombre      is distinct from public.texto_canonico(nombre)
-                                                   or telefono    is distinct from public.texto_canonico(telefono))
-       + (select count(*) from public.ventas    where descripcion is distinct from public.texto_canonico(descripcion))
+  select (select count(*) from public.cajas
+           where descripcion is distinct from nullif(btrim(regexp_replace(descripcion, '\s+', ' ', 'g')), ''))
+       + (select count(*) from public.productos
+           where nombre      is distinct from nullif(btrim(regexp_replace(nombre, '\s+', ' ', 'g')), ''))
+       + (select count(*) from public.clientas
+           where nombre      is distinct from nullif(btrim(regexp_replace(nombre, '\s+', ' ', 'g')), '')
+              or telefono    is distinct from nullif(btrim(regexp_replace(telefono, '\s+', ' ', 'g')), ''))
+       + (select count(*) from public.ventas
+           where descripcion is distinct from nullif(btrim(regexp_replace(descripcion, '\s+', ' ', 'g')), ''))
 ),
 descuadres as (
   -- Lo que salió del stock tiene que coincidir con lo vendido desde la app.
