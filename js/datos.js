@@ -71,10 +71,13 @@ const Datos = {
     return clave;
   },
 
-  /* El colchón solo mueve los precios sugeridos: el costo real no cambia. */
+  /* El colchón solo mueve los precios sugeridos: el costo real no cambia.
+     Manda el valor final, no una diferencia: repetirlo deja lo mismo. Si no
+     encuentra la caja, avisa en vez de dar el cambio por hecho. */
   async cambiarColchon(id, colchon) {
-    const { error } = await sb.from('cajas').update({ colchon }).eq('id', id);
+    const { data, error } = await sb.from('cajas').update({ colchon }).eq('id', id).select('id');
     if (error) throw error;
+    if (!data || data.length === 0) throw new Error('No se encontró la caja: recargá la página.');
   },
 
   /* ===== Productos ===== */
@@ -107,9 +110,11 @@ const Datos = {
     if (error) throw error;
   },
 
+  /* Igual que el colchón: el valor final, y un aviso si no está el producto. */
   async cambiarPrecio(id, precio) {
-    const { error } = await sb.from('productos').update({ precio }).eq('id', id);
+    const { data, error } = await sb.from('productos').update({ precio }).eq('id', id).select('id');
     if (error) throw error;
+    if (!data || data.length === 0) throw new Error('No se encontró el producto: recargá la página.');
   },
 
   /* Descuenta stock y registra la venta en una sola transacción, para que la
