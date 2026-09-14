@@ -13,7 +13,8 @@
 -- productos para decir a cuánto vender cada uno (ver 05_calculos.sql).
 --
 -- Todas las filas llevan owner_id, y cada referencia entre tablas incluye el
--- owner_id: una fila nunca puede apuntar a datos de otra cuenta.
+-- owner_id: una fila nunca puede apuntar a datos de otra cuenta. Los textos
+-- se guardan en forma canónica (ver el final del script).
 
 -- ------------------------------------------------------------------ cajas
 create table if not exists public.cajas (
@@ -133,3 +134,50 @@ create table if not exists public.abonos (
   constraint abonos_venta_del_mismo_dueno foreign key (venta_id, owner_id)
     references public.ventas (id, owner_id) on delete cascade
 );
+
+-- ------------------------------------------------------- textos canónicos
+-- Un mismo texto se guarda siempre igual: sin espacios al principio ni al
+-- final y con uno solo entre palabras; vacío queda como null. Así "Karla
+-- Pérez " y "Karla  Pérez" son la misma clienta. Lo hace la base, no la app,
+-- para que dé igual desde dónde se cargue (la app o el SQL Editor).
+create or replace function public.texto_canonico(t text)
+returns text
+language sql
+immutable
+as $$ select nullif(btrim(regexp_replace(t, '\s+', ' ', 'g')), '') $$;
+
+create or replace function public.canonizar_textos()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  case tg_table_name
+    when 'cajas' then
+      new.descripcion := texto_canonico(new.descripcion);
+    when 'productos' then
+      new.nombre := texto_canonico(new.nombre);
+    when 'clientas' then
+      new.nombre   := texto_canonico(new.nombre);
+      new.telefono := texto_canonico(new.telefono);
+    when 'ventas' then
+      new.descripcion := texto_canonico(new.descripcion);
+  end case;
+  return new;
+end $$;
+
+do $$
+declare
+  t text;
+begin
+  foreach t in array array['cajas', 'productos', 'clientas', 'ventas'] loop
+    execute format('drop trigger if exists textos_canonicos on public.%I', t);
+    execute format('create trigger textos_canonicos before insert or update on public.%I
+                      for each row execute function public.canonizar_textos()', t);
+  end loop;
+end $$;
+
+-- La usan los triggers al escribir; sin sesión no hace falta.
+revoke all on function public.texto_canonico(text) from public, anon;
+grant execute on function public.texto_canonico(text) to authenticated;
+revoke all on function public.canonizar_textos() from public, anon;

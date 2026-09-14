@@ -8,6 +8,7 @@
 --   v1  los gastos de la caja iban solo en dólares (costo_lote_usd, flete_usd…)
 --   v2  cada gasto con su moneda, más el colchón cambiario
 --   v3  cada referencia entre tablas atada al mismo owner_id
+--   v4  textos en forma canónica
 --
 -- Después de este script van 03, 04, 05 y 06: vuelven a crear índices,
 -- políticas, vistas y fotos con la definición actual.
@@ -117,6 +118,36 @@ begin
       foreign key (venta_id, owner_id) references public.ventas (id, owner_id) on delete cascade;
   end if;
 end $$;
+
+-- ------------------------------------------------ v3 → v4: textos canónicos
+-- 01 hace que los textos nuevos entren en forma canónica; acá se llevan a esa
+-- forma los que ya estaban. Si dos clientas de una cuenta quedaran con el
+-- mismo nombre ("Karla Pérez" y "Karla  Pérez"), se avisa en vez de fallar a
+-- medias: hay que decidir a mano con cuál quedarse.
+do $$
+declare
+  repetidas text;
+begin
+  select string_agg(nombre, ', ') into repetidas from (
+    select min(public.texto_canonico(nombre)) as nombre
+      from public.clientas
+     group by owner_id, lower(public.texto_canonico(nombre))
+    having count(*) > 1
+  ) x;
+  if repetidas is not null then
+    raise exception 'Al normalizar los nombres quedarían clientas repetidas: %. Pasá sus fiados a una sola, borrá la otra y corré de nuevo.', repetidas;
+  end if;
+end $$;
+
+update public.cajas     set descripcion = public.texto_canonico(descripcion)
+ where descripcion is distinct from public.texto_canonico(descripcion);
+update public.productos set nombre = public.texto_canonico(nombre)
+ where nombre is distinct from public.texto_canonico(nombre);
+update public.clientas  set nombre = public.texto_canonico(nombre), telefono = public.texto_canonico(telefono)
+ where nombre is distinct from public.texto_canonico(nombre)
+    or telefono is distinct from public.texto_canonico(telefono);
+update public.ventas    set descripcion = public.texto_canonico(descripcion)
+ where descripcion is distinct from public.texto_canonico(descripcion);
 
 -- La API de Supabase vuelve a leer la estructura.
 notify pgrst, 'reload schema';

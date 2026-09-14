@@ -30,6 +30,13 @@ cruzadas(que, n) as (
   union all
   select 'abono → venta', count(*) from public.abonos a join public.ventas v on v.id = a.venta_id where v.owner_id <> a.owner_id
 ),
+sin_normalizar(n) as (
+  select (select count(*) from public.cajas     where descripcion is distinct from public.texto_canonico(descripcion))
+       + (select count(*) from public.productos where nombre      is distinct from public.texto_canonico(nombre))
+       + (select count(*) from public.clientas  where nombre      is distinct from public.texto_canonico(nombre)
+                                                   or telefono    is distinct from public.texto_canonico(telefono))
+       + (select count(*) from public.ventas    where descripcion is distinct from public.texto_canonico(descripcion))
+),
 descuadres as (
   -- Lo que salió del stock tiene que coincidir con lo vendido desde la app.
   select p.nombre, p.cantidad - p.stock as salio, coalesce(sum(d.cantidad), 0) as vendido
@@ -64,6 +71,13 @@ revisiones(orden, grupo, revision, estado, detalle) as (
          count(c.conname) || ' de 5'
     from referencias r
     left join pg_constraint c on c.conname = r.nombre
+  union all
+  select 4, 'Integridad', 'Textos en forma canónica',
+         case when t.con_trigger = 4 and s.n = 0 then 'ok' else 'error' end,
+         t.con_trigger || ' de 4 tablas con el trigger · ' || s.n || ' textos sin normalizar'
+    from sin_normalizar s,
+         (select count(*) as con_trigger from pg_trigger
+           where tgname = 'textos_canonicos' and not tgisinternal) t
   union all
   select 5, 'Seguridad', 'RLS activado',
          case when count(*) filter (where c.relrowsecurity) = 6 then 'ok' else 'error' end,
