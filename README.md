@@ -4,6 +4,8 @@ App web (PWA) para emprendedores que traen cajas desde USA y revenden: saber si 
 
 Proyecto del capstone de **Ingeniería de Software I**.
 
+**Código de verificación:** `LEARN-CAP-FE4FE1D4`
+
 ## El problema
 
 Quien trae mercadería desde USA suele ponerle precio a ojo, sin sumar lo que costó traerla: el flete, la aduana y lo que se pagó por el lote. Así no hay forma de saber si una caja dejó ganancia, y es fácil vender con pérdida sin enterarse.
