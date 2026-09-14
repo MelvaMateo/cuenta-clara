@@ -1,0 +1,15 @@
+{
+  "name": "cuenta-clara",
+  "private": true,
+  "description": "Solo para las pruebas: el sitio es estático y no instala nada para publicarse.",
+  "scripts": {
+    "test": "npm run test:sql",
+    "test:sql": "node tests/sql.test.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8"
+  }
+}

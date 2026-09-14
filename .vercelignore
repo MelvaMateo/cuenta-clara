@@ -2,3 +2,10 @@
 # PLAN.md es el documento del caso de estudio del capstone: queda en GitHub
 # para la entrega, pero no hace falta publicarlo en la web.
 PLAN.md
+
+# Las pruebas y lo que instalan: el sitio es estático y se publica tal cual,
+# sin instalar nada. Sin package.json a la vista, Vercel no corre npm install.
+package.json
+package-lock.json
+node_modules/
+tests/
