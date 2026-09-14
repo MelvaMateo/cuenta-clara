@@ -11,7 +11,7 @@
 import { PGlite } from '@electric-sql/pglite';
 import puppeteer from 'puppeteer-core';
 import { createServer } from 'node:http';
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -101,8 +101,9 @@ window.supabase = { createClient: () => {
   const subidos = new Set();
   return {
     auth: {
-      getSession: async () => ({ data: { session: { user: { id: 'u1', email: 'prueba@cuenta-clara.test',
-        user_metadata: { full_name: 'Usuaria de prueba' } } } } }),
+      // Con ?sinsesion en la dirección, simula que nadie inició sesión.
+      getSession: async () => ({ data: { session: location.search.includes('sinsesion') ? null
+        : { user: { id: 'u1', email: 'prueba@cuenta-clara.test', user_metadata: { full_name: 'Usuaria de prueba' } } } } }),
       signOut: async () => ({}),
     },
     from: consulta,
@@ -121,17 +122,28 @@ window.supabase = { createClient: () => {
 } };`;
 
 // ------------------------------------------------ el sitio, servido local
+// Como lo sirve Vercel: con los headers de vercel.json (así la prueba corre con
+// el CSP de verdad) y con 404.html, con estado 404, si la dirección no existe.
+// Las fuentes de vercel.json son del tipo "/(.*)", que ya son expresiones regulares.
 const TIPOS = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml',
-                '.json': 'application/json', '.png': 'image/png', '.txt': 'text/plain' };
+                '.json': 'application/json', '.png': 'image/png', '.ico': 'image/x-icon', '.txt': 'text/plain' };
+const REGLAS = JSON.parse(readFileSync(`${RAIZ}vercel.json`, 'utf8')).headers || [];
+const headersPara = ruta => Object.fromEntries(REGLAS
+  .filter(r => new RegExp(`^${r.source}$`).test(ruta))
+  .flatMap(r => r.headers.map(h => [h.key, h.value])));
 const servidor = createServer((req, res) => {
   const ruta = decodeURIComponent(new URL(req.url, 'http://x').pathname);
   const archivo = join(RAIZ, ruta === '/' ? 'index.html' : ruta);
-  if (!archivo.startsWith(RAIZ.replace(/[\\/]$/, '')) || !existsSync(archivo)) { res.writeHead(404).end(); return; }
-  res.writeHead(200, { 'Content-Type': (TIPOS[extname(archivo)] || 'application/octet-stream') + '; charset=utf-8' });
-  res.end(readFileSync(archivo));
+  const existe = archivo.startsWith(RAIZ.replace(/[\\/]$/, '')) && existsSync(archivo) && statSync(archivo).isFile();
+  const servido = existe ? archivo : join(RAIZ, '404.html');
+  res.writeHead(existe ? 200 : 404, {
+    ...headersPara(ruta),
+    'Content-Type': (TIPOS[extname(servido)] || 'application/octet-stream') + '; charset=utf-8',
+  });
+  res.end(readFileSync(servido));
 });
 await new Promise(r => servidor.listen(0, '127.0.0.1', r));
-const URL_APP = `http://127.0.0.1:${servidor.address().port}/app.html`;
+const BASE = `http://127.0.0.1:${servidor.address().port}`;
 
 // Una foto de 1×1 para probar la subida.
 const temporal = mkdtempSync(join(tmpdir(), 'cuenta-clara-ui-'));
@@ -146,18 +158,30 @@ const browser = await puppeteer.launch({
 const errores = [];
 const respuestas = [];
 
-try {
+// Abre una página del sitio con Supabase simulado. Los errores de JS y los
+// bloqueos del CSP (Chrome los informa en la consola) se juntan en `errores`.
+const abrir = async ruta => {
   const page = await browser.newPage();
   await page.setBypassServiceWorker(true);
   await page.setRequestInterception(true);
   page.on('request', r => r.url().includes('supabase-js')
     ? r.respond({ status: 200, contentType: 'application/javascript', body: SIMULADO })
     : r.continue());
-  page.on('pageerror', e => errores.push(e.message));
-  page.on('console', m => { if (m.type() === 'error') errores.push('console: ' + m.text()); });
+  page.on('pageerror', e => errores.push(`${ruta}: ${e.message}`));
+  page.on('console', m => {
+    if (m.type() !== 'error') return;
+    // La 404 responde 404 a propósito: el aviso de su propio documento no es un error.
+    if (/status of 404/.test(m.text()) && m.location().url === BASE + ruta) return;
+    errores.push(`${ruta}: ${m.text()}`);
+  });
   page.on('dialog', d => d.accept(respuestas.shift() ?? ''));
   await page.setViewport({ width: 1280, height: 900 });
-  await page.goto(URL_APP, { waitUntil: 'networkidle0' });
+  const respuesta = await page.goto(BASE + ruta, { waitUntil: 'networkidle0' });
+  return { page, respuesta };
+};
+
+try {
+  const { page, respuesta: respuestaApp } = await abrir('/app.html');
   await espera(800);
 
   const llamadas = () => page.evaluate(() => window.__llamadas);
@@ -264,6 +288,22 @@ try {
   const porTabla = t => ordenes.filter(o => o.tabla === t).map(o => o.col).slice(0, 2).join(',');
   ok(porTabla('cajas_resumen') === 'fecha,id' && porTabla('productos_costeados') === 'nombre,id' && porTabla('fiados') === 'fecha,id',
      `las lecturas desempatan por id (${['cajas_resumen', 'productos_costeados', 'fiados'].map(porTabla).join(' / ')})`);
+
+  // ------------------------------------ el sitio con los headers de Vercel
+  // Si el CSP bloqueara algo que una página necesita, Chrome lo informa en la
+  // consola y la última revisión ("errores de JS") falla.
+  const cabeceras = respuestaApp.headers();
+  ok(/frame-ancestors 'none'/.test(cabeceras['content-security-policy'] || '') && cabeceras['x-content-type-options'] === 'nosniff',
+     'la app se sirve con los headers de seguridad de vercel.json');
+  const landing = await abrir('/');
+  ok(landing.respuesta.status() === 200, 'la landing carga con el CSP');
+  const login = await abrir('/login.html?sinsesion');
+  await espera(500);
+  ok(await login.page.$('#formLogin') !== null && login.page.url().includes('login.html'),
+     'el login carga con el CSP y, sin sesión, se queda en el login');
+  const perdida = await abrir('/esta-pagina-no-existe');
+  ok(perdida.respuesta.status() === 404 && (await perdida.page.content()).includes('Esta página no existe'),
+     'una dirección que no existe da 404 con la página propia');
 
   ok(errores.length === 0, 'errores de JS: ' + (errores.join(' | ') || 'ninguno'));
 } catch (e) {
