@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#b5179e">
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <title>Página no encontrada — Cuenta Clara</title>
+  <!-- Rutas absolutas: esta página se muestra en cualquier dirección que no exista. -->
+  <link rel="stylesheet" href="/css/base.css">
+  <style>
+    body { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 24px; }
+    .perdida {
+      max-width: 440px; text-align: center; background: var(--blanco);
+      border: 1px solid var(--borde); border-radius: 20px; padding: 40px 28px; box-shadow: var(--sombra);
+    }
+    .perdida img { border-radius: 18px; }
+    .codigo {
+      margin-top: 18px; font-size: 3.2rem; font-weight: 800; line-height: 1;
+      background: linear-gradient(135deg, var(--magenta), var(--morado));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    h1 { margin-top: 10px; font-size: 1.35rem; }
+    .explica { margin-top: 10px; color: var(--suave); line-height: 1.5; }
+    .acciones { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-items: center; }
+    .secundario { color: var(--magenta); font-weight: 600; text-decoration: none; padding: 11px 8px; }
+    .secundario:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <main class="perdida">
+    <img src="/icon.svg" alt="" width="72" height="72">
+    <p class="codigo">404</p>
+    <h1>Esta página no existe</h1>
+    <p class="explica">Puede que el enlace esté mal escrito o que la página se haya movido.</p>
+    <div class="acciones">
+      <a class="btn" href="/">Ir al inicio</a>
+      <a class="secundario" href="/login.html">Iniciar sesión</a>
+    </div>
+  </main>
+</body>
+</html>
