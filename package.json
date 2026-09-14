@@ -3,7 +3,8 @@
   "private": true,
   "description": "Solo para las pruebas: el sitio es estático y no instala nada para publicarse.",
   "scripts": {
-    "test": "npm run test:sql",
+    "test": "npm run test:sintaxis && npm run test:sql",
+    "test:sintaxis": "node tests/sintaxis.mjs",
     "test:sql": "node tests/sql.test.mjs"
   },
   "engines": {
