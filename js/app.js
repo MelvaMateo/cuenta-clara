@@ -20,6 +20,20 @@ const pct1 = n => (Math.round(Number(n) * 1000) / 10) + '%';     // 0.025 → "2
 const monto = (v, moneda) => (moneda === 'USD' ? usd(v) : fmt(v));
 const entero = n => String(Math.round(n));
 
+/* Lo que se escribe en un cuadro de diálogo llega como texto: "150", "150.50",
+   "150,50", "L 1,200". Se lee siempre igual: con coma y punto, la coma separa
+   miles; con solo coma, separa miles si le siguen grupos de tres cifras y, si
+   no, es el decimal. Lo que no se entiende da NaN y la operación no sigue. */
+function leerNumero(texto) {
+  let s = String(texto ?? '').trim().replace(/^(L|\$)\s*/i, '').replace(/\s/g, '');
+  if (s.includes('.') && s.includes(',')) s = s.replace(/,/g, '');
+  else if (/^\d{1,3}(,\d{3})+$/.test(s)) s = s.replace(/,/g, '');
+  else s = s.replace(',', '.');
+  return /^\d+(\.\d+)?$/.test(s) ? Number(s) : NaN;
+}
+const leerMonto = texto => Math.round(leerNumero(texto) * 100) / 100;       // a centavos, como la base
+const leerEntero = texto => { const n = leerNumero(texto); return Number.isInteger(n) ? n : NaN; };
+
 /* Los nombres los escribe la usuaria: se escapan antes de meterlos en el HTML,
    o un "<" en el nombre de un producto rompería la tarjeta. */
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
@@ -292,7 +306,7 @@ async function cambiarColchon(id) {
     `No cambia lo que te costó la caja ni los precios que ya pusiste.`,
     String(Math.round(Number(c.colchon) * 1000) / 10));
   if (texto === null) return;
-  const valor = parseFloat(texto.replace(',', '.'));
+  const valor = leerNumero(texto);
   if (!(valor >= 0 && valor <= 50)) { avisar('El colchón tiene que estar entre 0 y 50%.'); return; }
   try {
     await Datos.cambiarColchon(id, valor / 100);
@@ -432,8 +446,10 @@ async function addProducto(e) {
 async function venderProducto(id) {
   const p = productos.find(x => x.id === id);
   if (!p) return;
-  const cant = parseInt(prompt(`¿Cuántas unidades de "${p.nombre}" vendiste?`, '1'));
-  if (!cant || cant <= 0) return;
+  const texto = prompt(`¿Cuántas unidades de "${p.nombre}" vendiste?`, '1');
+  if (texto === null) return;
+  const cant = leerEntero(texto);
+  if (!(cant > 0)) { avisar('La cantidad tiene que ser un número entero mayor que cero.'); return; }
   try {
     await Claves.con(['vender', id, cant, p.stock],
       clave => Datos.venderProducto(clave, id, cant));
@@ -447,10 +463,12 @@ async function venderProducto(id) {
 async function cambiarPrecio(id) {
   const p = productos.find(x => x.id === id);
   if (!p) return;
-  const nuevo = parseFloat(prompt(
+  const texto = prompt(
     `${p.nombre}\nTe cuesta ${fmt(p.costo_unitario)}\nSugerido: ${fmt(p.precio_sugerido)}\n\nNuevo precio:`,
-    p.precio));
-  if (!(nuevo >= 0)) return;
+    p.precio);
+  if (texto === null) return;
+  const nuevo = leerMonto(texto);
+  if (!(nuevo >= 0)) { avisar('Escribí el precio como un número, por ejemplo 150.50.'); return; }
   try {
     await Datos.cambiarPrecio(id, nuevo);
     avisar(`Precio de "${p.nombre}": ${fmt(nuevo)}`, 'ok');
@@ -577,8 +595,10 @@ async function addFiado(e) {
 async function abonar(id) {
   const fi = fiados.find(x => x.id === id);
   if (!fi) return;
-  const m = parseFloat(prompt(`Saldo de ${fi.clienta}: ${fmt(fi.saldo)}\n¿Cuánto abona?`, ''));
-  if (!m || m <= 0) return;
+  const texto = prompt(`Saldo de ${fi.clienta}: ${fmt(fi.saldo)}\n¿Cuánto abona?`, '');
+  if (texto === null) return;
+  const m = leerMonto(texto);
+  if (!(m > 0)) { avisar('Escribí el abono como un número mayor que cero, por ejemplo 150.50.'); return; }
   if (m > Number(fi.saldo)) { avisar('El abono no puede ser mayor al saldo.'); return; }
   try {
     const saldo = await Claves.con(['abono', id, m, fi.saldo],
