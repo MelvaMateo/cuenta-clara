@@ -29,6 +29,10 @@ const Claves = {
     this.pendientes.delete(llave);
     return resultado;
   },
+
+  /* Un texto en la firma, como lo guarda la base: "Karla  Medina " y
+     "karla medina" son la misma operación. */
+  texto: s => String(s ?? '').trim().replace(/\s+/g, ' ').toLowerCase(),
 };
 
 const Datos = {
@@ -163,33 +167,12 @@ const Datos = {
     return data;
   },
 
-  /* Busca la clienta por nombre y la crea si no existe. Sin esto, "Karla" y
-     "karla" quedarían como dos deudoras distintas. */
-  async clientaPorNombre(nombre) {
-    const { data, error } = await sb
-      .from('clientas')
-      .select('id')
-      .ilike('nombre', nombre)
-      .maybeSingle();
-    if (error) throw error;
-    if (data) return data.id;
-
-    const { data: nueva, error: errorAlta } = await sb
-      .from('clientas')
-      .insert({ nombre })
-      .select('id')
-      .single();
-    if (errorAlta) throw errorAlta;
-    return nueva.id;
-  },
-
-  async agregarFiado({ clienta, descripcion, monto }) {
-    const clientaId = await this.clientaPorNombre(clienta);
-    const { error } = await sb.from('ventas').insert({
-      clienta_id: clientaId,
-      descripcion: descripcion || null,
-      es_fiada: true,
-      total: monto,
+  /* Anota el fiado y, si no existe, la clienta, en una sola transacción de la
+     base. La clienta se reconoce por su nombre sin importar mayúsculas ni
+     espacios: "karla  medina" es Karla Medina. La clave es el id del fiado. */
+  async agregarFiado(clave, { clienta, descripcion, monto }) {
+    const { error } = await sb.rpc('registrar_fiado', {
+      p_venta: clave, p_clienta: clienta, p_descripcion: descripcion || null, p_total: monto,
     });
     if (error) throw error;
   },

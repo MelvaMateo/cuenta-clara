@@ -556,7 +556,9 @@ async function addFiado(e) {
   const boton = f.querySelector('button[type="submit"]');
   boton.disabled = true;
   try {
-    await Datos.agregarFiado({ clienta, descripcion: f.descripcion.value.trim(), monto });
+    const descripcion = f.descripcion.value.trim();
+    await Claves.con(['fiado', Claves.texto(clienta), Claves.texto(descripcion), monto, fiados.length],
+      clave => Datos.agregarFiado(clave, { clienta, descripcion, monto }));
     f.reset();
     if (!esEscritorio()) alternarPanel('panelFiado', false);
     avisar(`Fiado de ${clienta} por ${fmt(monto)} anotado`, 'ok');

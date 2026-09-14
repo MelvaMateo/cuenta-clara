@@ -19,6 +19,10 @@ referencias(nombre) as (
          ('detalle_venta_del_mismo_dueno'), ('detalle_producto_del_mismo_dueno'),
          ('abonos_venta_del_mismo_dueno')
 ),
+operaciones(firma) as (
+  values ('public.vender_producto(uuid,uuid,integer)'),
+         ('public.registrar_fiado(uuid,text,text,numeric)')
+),
 cruzadas(que, n) as (
   select 'producto → caja', count(*) from public.productos p join public.cajas c on c.id = p.caja_id where c.owner_id <> p.owner_id
   union all
@@ -91,14 +95,22 @@ revisiones(orden, grupo, revision, estado, detalle) as (
     from pg_policies
    where schemaname = 'public' and policyname = 'solo lo propio'
   union all
-  select 7, 'Seguridad', 'Solo con sesión se puede vender',
-         case when to_regprocedure('public.vender_producto(uuid,uuid,integer)') is null then 'error'
-              when to_regprocedure('public.vender_producto(uuid,integer)') is not null then 'error'
-              when has_function_privilege('anon', 'public.vender_producto(uuid,uuid,integer)', 'execute') then 'error'
-              else 'ok' end,
-         case when to_regprocedure('public.vender_producto(uuid,uuid,integer)') is null then 'falta la función con clave de venta'
-              when to_regprocedure('public.vender_producto(uuid,integer)') is not null then 'queda la versión sin clave'
-              else '' end
+  -- has_function_privilege falla si la función no existe: el case lo evita.
+  select 7, 'Seguridad', 'Operaciones con clave, solo con sesión',
+         case when bool_or(to_regprocedure(o.firma) is null)
+                or to_regprocedure('public.vender_producto(uuid,integer)') is not null
+                or bool_or(case when to_regprocedure(o.firma) is null then false
+                                else has_function_privilege('anon', to_regprocedure(o.firma), 'execute') end)
+              then 'error' else 'ok' end,
+         concat_ws(' · ',
+           count(to_regprocedure(o.firma)) || ' de ' || count(*),
+           'faltan: ' || string_agg(o.firma, ', ') filter (where to_regprocedure(o.firma) is null),
+           case when to_regprocedure('public.vender_producto(uuid,integer)') is not null
+                then 'queda vender_producto sin clave' end,
+           'sin sesión se puede usar: ' || string_agg(o.firma, ', ') filter (
+             where case when to_regprocedure(o.firma) is null then false
+                        else has_function_privilege('anon', to_regprocedure(o.firma), 'execute') end))
+    from operaciones o
   union all
   select 8, 'Seguridad', 'Fotos: cada cuenta lista solo las suyas',
          case when exists (select 1 from pg_policies where schemaname = 'storage' and policyname = 'ver fotos propias')

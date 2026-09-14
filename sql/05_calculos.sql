@@ -226,5 +226,59 @@ end $$;
 revoke all on function public.vender_producto(uuid, uuid, integer) from public, anon;
 grant execute on function public.vender_producto(uuid, uuid, integer) to authenticated;
 
+-- ------------------------------------------------------------------ fiado
+-- Anota un fiado y, si hace falta, la clienta: todo o nada. Antes eran dos
+-- llamadas desde la app y, si fallaba la segunda, quedaba la clienta sin su
+-- fiado. La clienta se reconoce por su nombre canónico, sin distinguir
+-- mayúsculas: "karla  medina" es Karla Medina. La clave es el id del fiado.
+-- Devuelve el id de la clienta.
+create or replace function public.registrar_fiado(p_venta uuid, p_clienta text, p_descripcion text, p_total numeric)
+returns uuid
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  v_owner   uuid          := auth.uid();
+  v_nombre  text          := texto_canonico(p_clienta);
+  v_desc    text          := texto_canonico(p_descripcion);
+  v_total   numeric(10,2) := round(p_total, 2);
+  v_clienta uuid;
+begin
+  if p_venta is null then
+    raise exception 'Falta la clave del fiado';
+  end if;
+  if v_owner is null then
+    raise exception 'Hace falta iniciar sesión';
+  end if;
+  if v_nombre is null then
+    raise exception 'Falta el nombre de la clienta';
+  end if;
+  if v_total is null or v_total <= 0 then
+    raise exception 'El monto debe ser mayor que cero';
+  end if;
+
+  insert into clientas (owner_id, nombre) values (v_owner, v_nombre)
+  on conflict (owner_id, lower(nombre)) do nothing;
+  select id into v_clienta from clientas where owner_id = v_owner and lower(nombre) = lower(v_nombre);
+
+  insert into ventas (id, owner_id, clienta_id, descripcion, es_fiada, total)
+       values (p_venta, v_owner, v_clienta, v_desc, true, v_total)
+  on conflict (id) do nothing;
+
+  -- No entró porque la clave ya estaba: tiene que ser el mismo fiado.
+  if not found and not exists (
+       select 1 from ventas
+        where id = p_venta and es_fiada and clienta_id = v_clienta
+          and total = v_total and descripcion is not distinct from v_desc) then
+    raise exception 'Este fiado ya se registró con otros datos';
+  end if;
+
+  return v_clienta;
+end $$;
+
+revoke all on function public.registrar_fiado(uuid, text, text, numeric) from public, anon;
+grant execute on function public.registrar_fiado(uuid, text, text, numeric) to authenticated;
+
 -- La API de Supabase vuelve a leer la estructura.
 notify pgrst, 'reload schema';
