@@ -817,3 +817,14 @@ main { max-width: 560px; margin: 0 auto; padding: 0 16px 20px; }
   .prod-precios div { padding: 6px 7px; }
   .prod-precios b { font-size: .78rem; white-space: nowrap; }
 }
+
+/* ===== Portal privado =====
+   Hasta que app.js confirma la sesión, solo se ve el aviso "Verificando tu
+   sesión": nada de la app aparece, ni por un instante, sin sesión. */
+body.bloqueada > :not(.verificando) { display: none !important; }
+.verificando { display: none; }
+body.bloqueada .verificando {
+  min-height: 100vh; min-height: 100dvh; display: grid; place-content: center;
+  justify-items: center; gap: 14px; padding: 24px; text-align: center; color: var(--suave);
+}
+.verificando img { border-radius: 14px; }

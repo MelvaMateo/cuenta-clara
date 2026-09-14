@@ -101,9 +101,13 @@ window.supabase = { createClient: () => {
   const subidos = new Set();
   return {
     auth: {
-      // Con ?sinsesion en la dirección, simula que nadie inició sesión.
-      getSession: async () => ({ data: { session: location.search.includes('sinsesion') ? null
-        : { user: { id: 'u1', email: 'prueba@cuenta-clara.test', user_metadata: { full_name: 'Usuaria de prueba' } } } } }),
+      // Con ?sinsesion en la dirección, simula que nadie inició sesión. Se
+      // recuerda en la pestaña, así el login y la app coinciden al redirigir.
+      getSession: async () => {
+        if (location.search.includes('sinsesion')) sessionStorage.setItem('sinsesion', '1');
+        return { data: { session: sessionStorage.getItem('sinsesion') ? null
+          : { user: { id: 'u1', email: 'prueba@cuenta-clara.test', user_metadata: { full_name: 'Usuaria de prueba' } } } } };
+      },
       signOut: async () => ({}),
     },
     from: consulta,
@@ -160,13 +164,16 @@ const respuestas = [];
 
 // Abre una página del sitio con Supabase simulado. Los errores de JS y los
 // bloqueos del CSP (Chrome los informa en la consola) se juntan en `errores`.
-const abrir = async ruta => {
+// `vaciar`: scripts del sitio que se sirven vacíos, para simular que nunca corren.
+const abrir = async (ruta, { vaciar = [] } = {}) => {
   const page = await browser.newPage();
   await page.setBypassServiceWorker(true);
   await page.setRequestInterception(true);
-  page.on('request', r => r.url().includes('supabase-js')
-    ? r.respond({ status: 200, contentType: 'application/javascript', body: SIMULADO })
-    : r.continue());
+  page.on('request', r => {
+    if (r.url().includes('supabase-js')) return r.respond({ status: 200, contentType: 'application/javascript', body: SIMULADO });
+    if (vaciar.some(v => r.url().includes(v))) return r.respond({ status: 200, contentType: 'application/javascript', body: '' });
+    return r.continue();
+  });
   page.on('pageerror', e => errores.push(`${ruta}: ${e.message}`));
   page.on('console', m => {
     if (m.type() !== 'error') return;
@@ -301,6 +308,19 @@ try {
   await espera(500);
   ok(await login.page.$('#formLogin') !== null && login.page.url().includes('login.html'),
      'el login carga con el CSP y, sin sesión, se queda en el login');
+  // ------------------------------------------------------- portal privado
+  // Sin sesión confirmada no se ve nada de la app. Con app.js vacío (como si la
+  // sesión nunca se confirmara) solo queda el aviso; sin sesión, va al login.
+  const trabado = await abrir('/app.html', { vaciar: ['js/app.js'] });
+  const seVe = sel => trabado.page.$eval(sel, el => getComputedStyle(el).display !== 'none');
+  ok(!(await seVe('.barra-app')) && !(await seVe('.tabbar')) && await seVe('#verificando'),
+     'el portal no muestra nada de la app hasta confirmar la sesión');
+  const privado = await abrir('/app.html?sinsesion');
+  await espera(500);
+  ok(privado.page.url().includes('login.html'), `sin sesión, el portal manda al login (${privado.page.url()})`);
+  ok(/<meta name="robots" content="noindex">/.test(await (await fetch(`${BASE}/app.html`)).text()),
+     'el portal pide no aparecer en buscadores');
+
   const perdida = await abrir('/esta-pagina-no-existe');
   ok(perdida.respuesta.status() === 404 && (await perdida.page.content()).includes('Esta página no existe'),
      'una dirección que no existe da 404 con la página propia');

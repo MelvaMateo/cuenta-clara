@@ -728,6 +728,8 @@ function renderResumen() {
 document.addEventListener('DOMContentLoaded', async () => {
   sesion = await exigirSesion();
   if (!sesion) return;
+  // Sesión confirmada: recién ahora se muestra la app (ver .bloqueada en app.css).
+  document.body.classList.remove('bloqueada');
 
   const nombre = Sesion.nombreDe(sesion);
   document.getElementById('saludo').textContent = `Hola, ${nombre.split(/\s+/)[0]} 👋`;

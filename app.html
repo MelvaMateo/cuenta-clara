@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#b5179e">
+  <meta name="robots" content="noindex">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="favicon.ico" sizes="32x32">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -15,7 +16,16 @@
   <link rel="stylesheet" href="css/base.css">
   <link rel="stylesheet" href="css/app.css">
 </head>
-<body>
+<body class="bloqueada">
+
+  <!-- Portal privado: hasta que app.js confirma la sesión no se ve nada de la
+       app, solo este aviso; sin sesión, app.js manda al login. Los datos
+       nunca llegan sin sesión: los protege el RLS de la base. -->
+  <div class="verificando" id="verificando">
+    <img src="icon.svg" alt="" width="56" height="56">
+    <p>Verificando tu sesión…</p>
+    <a class="btn" href="login.html">Iniciar sesión</a>
+  </div>
   <header class="barra-app">
     <div class="barra-fila">
       <div class="marca">
