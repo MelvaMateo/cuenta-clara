@@ -30,6 +30,9 @@ jobs:
       - name: Sintaxis de los scripts del sitio
         run: npm run test:sintaxis
 
+      - name: Healthcheck de la API
+        run: npm run test:health
+
       - name: Scripts de la base (PGlite)
         run: npm run test:sql
 

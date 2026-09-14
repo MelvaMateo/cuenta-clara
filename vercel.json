@@ -1,5 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/health.js": {
+      "includeFiles": "js/config.js"
+    }
+  },
   "headers": [
     {
       "source": "/(.*)",
