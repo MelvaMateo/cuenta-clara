@@ -68,10 +68,10 @@ npm test    # corre las tres, en este orden
 
 **CD.** Vercel está conectado al repo: cada push a `main` se publica solo en https://www.melvamateo.site, y cada rama o PR recibe una URL de vista previa. Eso es *despliegue* continuo (lo nuevo llega a producción sin que nadie apriete un botón), que va un paso más allá de la *entrega* continua (lo nuevo queda listo para publicar, pero alguien decide cuándo).
 
-Hoy Vercel publica sin esperar al CI: un push que rompa las pruebas igual llega a producción, y la ❌ solo avisa. Para que se publique únicamente lo que pasó el CI hay que activar dos cosas:
+Solo llega a producción lo que pasó el CI:
 
-- **En Vercel:** que el despliegue a producción espere el check `CI` de GitHub.
-- **En GitHub:** proteger `main` para que un PR no se pueda unir sin el check en verde.
+- **En Vercel**, el proyecto exige el check `test` de GitHub (*Deployment Checks*): cada push se construye, pero no pasa a producción hasta que las pruebas están en verde. Si fallan, el sitio sigue mostrando la versión anterior.
+- **En GitHub**, `main` está protegida: un PR no se puede unir sin el check `test` en verde, y la rama no se puede reescribir con force push ni borrar.
 
 ## Estructura
 
