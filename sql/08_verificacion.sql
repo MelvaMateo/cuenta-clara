@@ -109,7 +109,7 @@ revisiones(orden, grupo, revision, estado, detalle) as (
     from public.fiados
    where abonado > total
   union all
-  select 13, 'Datos', 'Productos vendidos por debajo del costo',
+  select 13, 'Datos', 'Productos con precio por debajo del costo',
          case when count(*) = 0 then 'ok' else 'aviso' end,
          coalesce(string_agg(nombre || ' (cuesta ' || costo_unitario || ', se vende a ' || precio || ')', '; '), 'ninguno')
     from public.productos_costeados
