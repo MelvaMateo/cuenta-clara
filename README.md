@@ -25,7 +25,7 @@ Lo comprado en tiendas conserva su costo exacto; lo que llega en lotes surtidos 
 
 - **PWA (este repo):** HTML, CSS y JavaScript sin compilación ni dependencias que instalar.
 - **Backend:** Supabase — **Auth** para el acceso y **PostgreSQL** para el inventario, las clientas, las ventas y los fiados. Ya no queda nada en `localStorage`.
-- **Producción (planeada):** hosting en Vercel. Ver la arquitectura en [PLAN.md](PLAN.md).
+- **Producción:** Vercel, en https://www.melvamateo.site (ver "Publicación"). La arquitectura está en [PLAN.md](PLAN.md).
 
 ## Configuración
 
@@ -49,22 +49,41 @@ npx serve .
 
 Abrí la dirección que imprime: esa es la landing. Desde ahí, **Iniciar sesión** te lleva al login y, tras entrar, a la app.
 
+## Publicación
+
+El sitio se publica en Vercel (ver "Pruebas y CI/CD"). Sus direcciones:
+
+| Qué | Dirección |
+|---|---|
+| Sitio | https://www.melvamateo.site/ |
+| Login | https://www.melvamateo.site/login.html |
+| Portal privado (requiere sesión) | https://www.melvamateo.site/app.html |
+| Healthcheck (JSON) | https://www.melvamateo.site/api/health |
+
+- **Instalable (PWA):** manifest con íconos PNG de 192 y 512 (y uno *maskable* para Android), ícono para iPhone y un service worker que deja abrir la app sin internet. Las imágenes salen de `icon.svg` con `node scripts/generar-imagenes.mjs`.
+- **Buscadores y redes:** título, descripción, Open Graph con la tarjeta `img/og.png`, y `robots.txt`, que deja afuera la app privada.
+- **Seguridad:** `vercel.json` manda un Content-Security-Policy que solo deja cargar lo que el sitio usa, más HSTS, `nosniff`, `Referrer-Policy`, `Permissions-Policy` y la prohibición de meter el sitio en un iframe.
+- **Portal privado:** hasta confirmar la sesión, `app.html` solo muestra "Verificando tu sesión"; sin sesión, manda al login. Los datos nunca salen de la base sin sesión: los protege el RLS.
+- **Healthcheck:** `/api/health` responde en JSON si el sitio y Supabase están disponibles: 200 con `"status": "ok"`, o 503 con `"degraded"` y el motivo si Supabase no responde.
+- **404:** una dirección que no existe muestra `404.html`, con el diseño del sitio.
+
 ## Pruebas y CI/CD
 
 Las pruebas no forman parte del sitio: el sitio es estático y se publica sin instalar nada. Para correrlas hace falta Node 20 o más:
 
 ```bash
 npm ci      # instala las herramientas de prueba
-npm test    # corre las tres, en este orden
+npm test    # corre las cuatro, en este orden
 ```
 
 | Comando | Qué prueba |
 |---|---|
 | `npm run test:sintaxis` | Que cada script de `js/` y el service worker se puedan leer |
+| `npm run test:health` | El healthcheck, sin red: 200 si Supabase responde, 503 si no, siempre en JSON |
 | `npm run test:sql` | Los scripts de `sql/` en un Postgres real (PGlite): que se puedan repetir, que actualicen una base con la historia real sin cambiar ningún número, los textos canónicos y las operaciones con clave |
 | `npm run test:ui` | La app en Chrome, con Supabase simulado: que un reintento después de un corte no repita la operación, los números escritos a mano y el orden de las listas. Si Chrome no está en su lugar habitual, poné la ruta en la variable `NAVEGADOR` |
 
-**CI (integración continua).** GitHub Actions corre esas tres pruebas en cada push y en cada pull request ([.github/workflows/ci.yml](.github/workflows/ci.yml)). Si alguna falla, el commit o el PR queda con una ❌ en GitHub; la insignia de arriba muestra cómo quedó el último.
+**CI (integración continua).** GitHub Actions corre esas cuatro pruebas en cada push y en cada pull request ([.github/workflows/ci.yml](.github/workflows/ci.yml)). Si alguna falla, el commit o el PR queda con una ❌ en GitHub; la insignia de arriba muestra cómo quedó el último.
 
 **CD.** Vercel está conectado al repo: cada push a `main` se publica solo en https://www.melvamateo.site, y cada rama o PR recibe una URL de vista previa. Eso es *despliegue* continuo (lo nuevo llega a producción sin que nadie apriete un botón), que va un paso más allá de la *entrega* continua (lo nuevo queda listo para publicar, pero alguien decide cuándo).
 
@@ -90,4 +109,8 @@ Solo llega a producción lo que pasó el CI:
 | `tests/`, `package.json` | Las pruebas y sus herramientas; el sitio no las necesita (ver "Pruebas y CI/CD") |
 | `.github/workflows/ci.yml` | El pipeline de CI en GitHub Actions |
 | `manifest.json`, `sw.js`, `icon.svg` | Soporte PWA (instalable, offline) |
+| `img/`, `favicon.ico`, `apple-touch-icon.png` | Íconos para instalar la app y la tarjeta para compartir; se generan con `scripts/generar-imagenes.mjs` |
+| `404.html`, `robots.txt` | La página de "no existe" y las reglas para buscadores |
+| `vercel.json` | Headers de seguridad y la configuración del healthcheck |
+| `api/health.js` | El healthcheck: `GET /api/health` |
 | `PLAN.md` | Plan y diseño completo: problema, backlog, arquitectura, calidad, despliegue y validación |
