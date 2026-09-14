@@ -1,0 +1,5 @@
+# Cuenta Clara: la landing y el login se pueden indexar. La app es privada:
+# sin sesión no muestra nada, y no tiene sentido que aparezca en buscadores.
+User-agent: *
+Allow: /
+Disallow: /app.html
