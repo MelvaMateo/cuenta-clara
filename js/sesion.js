@@ -35,7 +35,7 @@ const Sesion = {
   /* Google manda el nombre en user_metadata; con correo no viene, y queda
      la parte del correo antes de la arroba. */
   nombreDe(sesion) {
-    const usuario = (sesion && sesion.user) || {};
+    const usuario = sesion?.user || {};
     const meta = usuario.user_metadata || {};
     if (meta.full_name || meta.name) return meta.full_name || meta.name;
     return usuario.email ? usuario.email.split('@')[0] : 'Usuaria';
