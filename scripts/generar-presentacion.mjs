@@ -59,7 +59,20 @@ const datos = {
 };
 await db.close();
 
-// Un Supabase que solo lee: devuelve los datos de muestra y una sesión de ejemplo.
+// Cuentas de ejemplo para la captura del portal administrativo: inventadas.
+const CUENTAS_MUESTRA = [
+  { user_id: 'u1', correo: 'emprendedora@ejemplo.com', proveedores: ['email', 'google'], creada_en: '2026-08-10T12:00:00Z',
+    ultimo_acceso: '2026-09-15T12:00:00Z', es_admin: true, activa: true, cajas: 1, productos: 8, ventas: 7, por_cobrar: 1600 },
+  { user_id: 'u2', correo: 'tienda.aurora@ejemplo.com', proveedores: ['google'], creada_en: '2026-09-02T12:00:00Z',
+    ultimo_acceso: '2026-09-14T12:00:00Z', es_admin: false, activa: true, cajas: 3, productos: 41, ventas: 26, por_cobrar: 2350 },
+  { user_id: 'u3', correo: 'docente@ejemplo.com', proveedores: ['email', 'google'], creada_en: '2026-09-15T12:00:00Z',
+    ultimo_acceso: null, es_admin: true, activa: true, cajas: 0, productos: 0, ventas: 0, por_cobrar: 0 },
+  { user_id: 'u4', correo: 'cuenta.pausada@ejemplo.com', proveedores: ['email'], creada_en: '2026-08-20T12:00:00Z',
+    ultimo_acceso: '2026-08-30T12:00:00Z', es_admin: false, activa: false, cajas: 1, productos: 12, ventas: 4, por_cobrar: 0 },
+];
+
+// Un Supabase que solo lee: devuelve los datos de muestra, una sesión de
+// ejemplo con rol de administradora y las cuentas de ejemplo del portal.
 const SIMULADO = `
 window.supabase = { createClient: () => {
   const datos = ${JSON.stringify(datos)};
@@ -72,7 +85,7 @@ window.supabase = { createClient: () => {
     auth: { getSession: async () => ({ data: { session: { user: { id: 'u1', email: 'muestra@cuenta-clara.test',
       user_metadata: { full_name: 'Emprendedora de ejemplo' } } } } }), signOut: async () => ({}) },
     from: consulta,
-    rpc: async () => ({ data: null, error: null }),
+    rpc: async nombre => ({ data: { es_admin: true, cuenta_activa: true, admin_cuentas: ${JSON.stringify(CUENTAS_MUESTRA)} }[nombre] ?? null, error: null }),
     storage: { from: () => ({ getPublicUrl: () => ({ data: { publicUrl: '' } }) }) },
   };
 } };`;
@@ -137,6 +150,9 @@ await pestaña('fiados');
 capturas.fiados = await pantalla();
 await pestaña('resumen');
 capturas.resumen = await pantalla();
+await page.goto(`${BASE}/admin.html`, { waitUntil: 'networkidle0' });
+await espera(800);
+capturas.admin = await pantalla();
 await browser.close();
 servidor.close();
 

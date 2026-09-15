@@ -149,6 +149,7 @@
         <li><b>Fiados y abonos:</b> quién debe, cuánto, y cada abono, sin poder abonar más de lo que se debe.</li>
         <li><b>Resumen del negocio:</b> lo que falta cobrar, lo que queda por vender y cuánto se recuperó de cada caja.</li>
         <li><b>A prueba de cortes de conexión:</b> si la señal se cae justo al guardar, reintentar no duplica la venta ni el abono.</li>
+        <li><b>Portal administrativo:</b> quien administra ve todas las cuentas con sus totales (no su contenido), da o quita el rol de administrador y desactiva o reactiva cuentas.</li>
       </ul>
       <div class="capturas">
         <figure>
@@ -163,12 +164,17 @@
           <img src="captura:producto" alt="Formulario de nuevo producto con la sugerencia de precio y el aviso de que a 150 lempiras se vende con pérdida." width="390" height="844">
           <figcaption>Nuevo producto: el precio sugerido y el aviso de pérdida.</figcaption>
         </figure>
+        <figure>
+          <img src="captura:admin" alt="Portal administrativo: el resumen de cuentas, administradores y desactivadas, y la tarjeta de cada cuenta con sus totales y los botones para cambiar su rol o su estado." width="390" height="844">
+          <figcaption>Portal administrativo: las cuentas, su rol y su estado.</figcaption>
+        </figure>
       </div>
     </section>
 
     <section id="arquitectura">
       <h2>4. Arquitectura</h2>
       <p>La aplicación no tiene un servidor propio. El sitio es estático y lo sirve Vercel; los datos, el inicio de sesión y las fotos los maneja Supabase. Toda la seguridad vive en la base de datos: cada tabla tiene políticas de seguridad por fila (RLS), así que cada cuenta ve y cambia solo lo suyo, aunque la aplicación hable directo con la base. Las operaciones que tocan varias filas (vender, anotar un fiado, abonar) son funciones de la base que corren en una sola transacción y no se repiten si se reintentan.</p>
+      <p>Hay dos roles. Cada negocio usa su propia cuenta y ve solo lo suyo. Los administradores tienen además un portal para ver todas las cuentas y cambiar su rol o su estado; ese portal también pasa por funciones de la base que primero verifican el rol, así que ninguna clave secreta sale de Supabase.</p>
       <div class="diagrama">
         <svg viewBox="0 0 820 400" role="img" aria-labelledby="diagTitulo diagDesc" xmlns="http://www.w3.org/2000/svg">
           <title id="diagTitulo">Arquitectura de Cuenta Clara</title>
@@ -255,6 +261,7 @@
         <li><b>Vendé.</b> Cuando vendas algo, buscá el producto en <i>Stock</i> y tocá <i>Vender</i>. La app descuenta las unidades y suma la venta a la caja, así sabés cuánto llevás recuperado.</li>
         <li><b>Anotá los fiados.</b> En <i>Fiados</i>, anotá quién se lleva algo, qué se llevó y cuánto debe. Cuando te pague una parte, tocá <i>Registrar abono</i>: el saldo se actualiza y la app no deja abonar más de lo que se debe.</li>
         <li><b>Revisá el resumen.</b> En <i>Resumen</i> ves cuánto te deben, cuánto tenés por vender, qué productos se están vendiendo con pérdida, qué hay que reponer y cuánto recuperaste de cada caja.</li>
+        <li><b>Si administrás Cuenta Clara.</b> Con una cuenta administradora, arriba aparece <i>Administración</i>. Ahí ves todas las cuentas y cuántos datos tiene cada una, podés darle o quitarle el rol de administrador a otra cuenta, y desactivar o reactivar cuentas: una cuenta desactivada no ve ni carga datos hasta que la reactives. Nadie puede quitarse su propio rol, así que siempre queda alguien que administra.</li>
         <li><b>Si te quedás sin señal.</b> Podés abrir la app y consultar lo último que se cargó. Para guardar algo nuevo hace falta conexión; si se cortó justo al guardar, volvé a intentarlo: la app no lo registra dos veces.</li>
       </ol>
       <div class="capturas">
@@ -267,7 +274,7 @@
           <figcaption>Resumen: cómo va el negocio, de un vistazo.</figcaption>
         </figure>
       </div>
-      <p class="nota">Las capturas son de la app real, con los datos de muestra de una caja de ejemplo, no datos de ninguna persona.</p>
+      <p class="nota">Las capturas son de la app real, con los datos de muestra de una caja de ejemplo y, en el portal administrativo, cuentas de ejemplo inventadas: no son datos de ninguna persona.</p>
     </section>
 
     <section id="cliente">
