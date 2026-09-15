@@ -450,7 +450,13 @@ try {
   }
   await browser.close();
   servidor.close();
-  rmSync(temporal, { recursive: true, force: true });
+  // En Windows, Chrome puede tardar en soltar sus archivos: se reintenta, y si
+  // igual no se puede borrar la carpeta temporal, no es una falla de la prueba.
+  try {
+    rmSync(temporal, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
+  } catch (e) {
+    console.log(`(no se pudo borrar la carpeta temporal: ${e.code})`);
+  }
 }
 
 console.log(fallas ? `\n✗ ${fallas} pruebas fallaron` : '\n✓ todas las pruebas pasaron');
