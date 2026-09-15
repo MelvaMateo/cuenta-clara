@@ -45,8 +45,8 @@ const lempiras = n => 'L ' + Math.round(n).toLocaleString('en-US');
     const usd = Number($('sUsd').value);
     const gastos = Number($('sGastos').value) / 100;
     const margen = Number($('sMargen').value) / 100;
-    const tc = parseFloat($('sTc').value) > 0 ? parseFloat($('sTc').value) : 24.65;
-    const aOjo = parseFloat($('sOjo').value);
+    const tc = Number.parseFloat($('sTc').value) > 0 ? Number.parseFloat($('sTc').value) : 24.65;
+    const aOjo = Number.parseFloat($('sOjo').value);
 
     const producto = usd * tc;                   // lo que costó en USA, en lempiras
     const traer = producto * gastos;             // su parte del flete y la aduana

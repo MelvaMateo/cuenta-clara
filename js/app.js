@@ -29,10 +29,10 @@ function leerNumero(texto) {
   if (s.includes('.') && s.includes(',')) s = s.replace(/,/g, '');
   else if (/^\d{1,3}(,\d{3})+$/.test(s)) s = s.replace(/,/g, '');
   else s = s.replace(',', '.');
-  return /^\d+(\.\d+)?$/.test(s) ? Number(s) : NaN;
+  return /^\d+(\.\d+)?$/.test(s) ? Number(s) : Number.NaN;
 }
 const leerMonto = texto => Math.round(leerNumero(texto) * 100) / 100;       // a centavos, como la base
-const leerEntero = texto => { const n = leerNumero(texto); return Number.isInteger(n) ? n : NaN; };
+const leerEntero = texto => { const n = leerNumero(texto); return Number.isInteger(n) ? n : Number.NaN; };
 
 /* ¿Es un número de verdad, y mayor que cero (o al menos cero)? Lo que no se
    entiende da NaN, y cualquier comparación con NaN es falsa: por eso no
@@ -164,12 +164,12 @@ async function addCaja(e) {
   e.preventDefault();
   const f = e.target;
   const descripcion = f.descripcion.value.trim();
-  const tipoCambio = parseFloat(f.tipoCambio.value);
+  const tipoCambio = Number.parseFloat(f.tipoCambio.value);
   if (!descripcion || !esPositivo(tipoCambio)) {
     avisar('Falta el nombre de la caja o el tipo de cambio.');
     return;
   }
-  const colchon = parseFloat(f.colchon.value) || 0;
+  const colchon = Number.parseFloat(f.colchon.value) || 0;
   if (colchon < 0 || colchon > 50) {
     avisar('El colchón tiene que estar entre 0 y 50%.');
     return;
@@ -180,16 +180,16 @@ async function addCaja(e) {
     const caja = {
       descripcion,
       fecha: f.fecha.value || null,
-      lote: parseFloat(f.lote.value) || 0,
+      lote: Number.parseFloat(f.lote.value) || 0,
       loteMoneda: f.loteMoneda.value,
-      flete: parseFloat(f.flete.value) || 0,
+      flete: Number.parseFloat(f.flete.value) || 0,
       fleteMoneda: f.fleteMoneda.value,
-      aduana: parseFloat(f.aduana.value) || 0,
+      aduana: Number.parseFloat(f.aduana.value) || 0,
       aduanaMoneda: f.aduanaMoneda.value,
-      otros: parseFloat(f.otros.value) || 0,
+      otros: Number.parseFloat(f.otros.value) || 0,
       otrosMoneda: f.otrosMoneda.value,
       tipoCambio,
-      margen: (parseFloat(f.margen.value) || 0) / 100,
+      margen: (Number.parseFloat(f.margen.value) || 0) / 100,
       colchon: colchon / 100,
     };
     await Claves.con(['caja', { ...caja, descripcion: Claves.texto(descripcion) }, cajas.length],
@@ -342,8 +342,8 @@ function llenarSelectCajas() {
 function calcularSugerido() {
   const caja = cajas.find(c => c.id === document.getElementById('selCaja').value);
   const origen = document.getElementById('selOrigen').value;
-  const valor = parseFloat(document.getElementById('inpValor').value);
-  const precio = parseFloat(document.getElementById('inpPrecio').value);
+  const valor = Number.parseFloat(document.getElementById('inpValor').value);
+  const precio = Number.parseFloat(document.getElementById('inpPrecio').value);
   const cont = document.getElementById('sugerencia');
 
   if (!caja || !esPositivo(valor)) { cont.className = 'sugerencia'; cont.textContent = ''; return; }
@@ -414,8 +414,8 @@ async function addProducto(e) {
   e.preventDefault();
   const f = e.target;
   const nombre = f.nombre.value.trim();
-  const valorUsd = parseFloat(f.valorUsd.value);
-  const cantidad = parseInt(f.cantidad.value);
+  const valorUsd = Number.parseFloat(f.valorUsd.value);
+  const cantidad = Number.parseInt(f.cantidad.value, 10);
   if (!f.cajaId.value) { avisar('Elegí de qué caja salió el producto.'); return; }
   if (!nombre || !esNoNegativo(valorUsd) || !esPositivo(cantidad)) {
     avisar('Falta el nombre, el valor o la cantidad.');
@@ -430,8 +430,8 @@ async function addProducto(e) {
       origen: f.origen.value,
       valorUsd,
       cantidad,
-      stockMinimo: parseInt(f.stockMinimo.value) || 0,
-      precio: parseFloat(f.precio.value) || 0,
+      stockMinimo: Number.parseInt(f.stockMinimo.value, 10) || 0,
+      precio: Number.parseFloat(f.precio.value) || 0,
       fotoPath: fotoPendiente,
     };
     await Claves.con(['producto', { ...producto, nombre: Claves.texto(nombre) }, productos.length],
@@ -579,8 +579,8 @@ async function addFiado(e) {
   e.preventDefault();
   const f = e.target;
   const clienta = f.clienta.value.trim();
-  const monto = parseFloat(f.monto.value);
-  if (!clienta || isNaN(monto) || monto <= 0) {
+  const monto = Number.parseFloat(f.monto.value);
+  if (!clienta || Number.isNaN(monto) || monto <= 0) {
     avisar('Falta el nombre o un monto válido.');
     return;
   }
