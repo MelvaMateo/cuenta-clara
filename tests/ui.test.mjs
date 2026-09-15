@@ -144,7 +144,10 @@ const servidor = createServer((req, res) => {
     ...headersPara(ruta),
     'Content-Type': (TIPOS[extname(servido)] || 'application/octet-stream') + '; charset=utf-8',
   });
-  res.end(readFileSync(servido));
+  // El supabase-js simulado nunca coincide con el hash (SRI) del real: a las
+  // páginas que se sirven a la prueba se les quita el integrity.
+  const cuerpo = readFileSync(servido);
+  res.end(extname(servido) === '.html' ? cuerpo.toString('utf8').replace(/ integrity="[^"]*"/g, '') : cuerpo);
 });
 await new Promise(r => servidor.listen(0, '127.0.0.1', r));
 const BASE = `http://127.0.0.1:${servidor.address().port}`;

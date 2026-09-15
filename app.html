@@ -323,7 +323,9 @@
   <!-- Avisos: aparecen abajo y se van solos. -->
   <div id="aviso" class="toast" role="status" aria-live="polite"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js"></script>
+  <!-- integrity (SRI): si el CDN llegara a servir otro archivo, el navegador no lo ejecuta. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js"
+          integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script>
   <script src="js/config.js"></script>
   <script src="js/sesion.js"></script>
   <script src="js/datos.js"></script>
