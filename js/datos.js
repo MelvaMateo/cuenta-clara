@@ -205,4 +205,39 @@ const Datos = {
     if (error) throw error;
     return Number(data);
   },
+
+  /* ===== Portal administrativo =====
+     Todo pasa por funciones de la base que primero verifican que quien llama
+     sea administrador (ver sql/05_calculos.sql). */
+
+  /* Si la función todavía no existe, porque la base no tiene los scripts
+     nuevos, se toma como "no es administrador": el portal no aparece. */
+  async esAdmin() {
+    const { data, error } = await sb.rpc('es_admin');
+    return !error && data === true;
+  },
+
+  /* A una cuenta desactivada ya no le llegan datos: lo corta el RLS. Esto solo
+     sirve para explicarle por qué; ante la duda, se toma como activa. */
+  async cuentaActiva() {
+    const { data, error } = await sb.rpc('cuenta_activa');
+    return error ? true : data !== false;
+  },
+
+  async adminCuentas() {
+    const { data, error } = await sb.rpc('admin_cuentas');
+    if (error) throw error;
+    return data;
+  },
+
+  /* Mandan el valor final (sí o no): repetirlas deja lo mismo. */
+  async adminCambiarRol(usuario, esAdmin) {
+    const { error } = await sb.rpc('admin_cambiar_rol', { p_usuario: usuario, p_admin: esAdmin });
+    if (error) throw error;
+  },
+
+  async adminCambiarEstado(usuario, activa) {
+    const { error } = await sb.rpc('admin_cambiar_estado', { p_usuario: usuario, p_activa: activa });
+    if (error) throw error;
+  },
 };

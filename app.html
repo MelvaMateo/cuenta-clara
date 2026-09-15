@@ -33,6 +33,7 @@
         <span class="marca-texto">Cuenta<b>Clara</b></span>
       </div>
       <div class="usuario">
+        <a id="enlaceAdmin" class="salir enlace-admin" href="admin.html" hidden>Administración</a>
         <span class="avatar" id="avatar" aria-hidden="true">·</span>
         <button class="salir" onclick="salir()">
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
@@ -45,6 +46,13 @@
       <h1 id="saludo">Tu negocio, con la cuenta clara</h1>
     </div>
   </header>
+
+  <!-- Solo se ve si un administrador desactivó la cuenta (ver app.js). -->
+  <section class="cuenta-desactivada" id="cuentaDesactivada">
+    <h2>Tu cuenta está desactivada</h2>
+    <p>Un administrador desactivó esta cuenta, así que por ahora no se pueden ver ni cargar datos. Si creés que es un error, escribile a quien administra Cuenta Clara.</p>
+    <button class="btn" type="button" onclick="salir()">Cerrar sesión</button>
+  </section>
 
   <nav class="tabbar" aria-label="Secciones">
     <button class="tabbtn active" data-tab="cajas" onclick="showTab('cajas')">

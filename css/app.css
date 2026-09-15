@@ -846,3 +846,23 @@ label.solo-lector {
   white-space: nowrap;
   border: 0;
 }
+
+/* hidden siempre esconde, aunque la clase le ponga display (como .salir). */
+[hidden] { display: none !important; }
+.enlace-admin { text-decoration: none; }
+
+/* ===== Cuenta desactivada =====
+   Si un administrador la desactivó, en vez de la app vacía se ve el aviso. */
+.cuenta-desactivada { display: none; }
+body.desactivada .cuenta-desactivada {
+  display: block;
+  max-width: 560px;
+  margin: 24px auto;
+  padding: 24px;
+  text-align: center;
+  background: var(--blanco);
+  border-radius: 18px;
+  box-shadow: var(--sombra);
+}
+body.desactivada .cuenta-desactivada p { color: var(--suave); margin: 10px 0 18px; }
+body.desactivada main, body.desactivada .tabbar { display: none !important; }

@@ -752,6 +752,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Sesión confirmada: recién ahora se muestra la app (ver .bloqueada en app.css).
   document.body.classList.remove('bloqueada');
 
+  /* Cuenta desactivada desde el portal administrativo: el RLS ya no le entrega
+     datos; acá solo se le explica por qué, en vez de mostrarle la app vacía. */
+  if (!(await Datos.cuentaActiva())) {
+    document.body.classList.add('desactivada');
+    return;
+  }
+  /* El enlace al portal, solo para administradores. Esconderlo no es la
+     seguridad: el portal y la base vuelven a verificar el rol. */
+  if (await Datos.esAdmin()) document.getElementById('enlaceAdmin').hidden = false;
+
   const nombre = Sesion.nombreDe(sesion);
   document.getElementById('saludo').textContent = `Hola, ${nombre.split(/\s+/)[0]} 👋`;
   document.getElementById('avatar').textContent = nombre.trim().charAt(0).toUpperCase();
