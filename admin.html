@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#b5179e">
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="favicon.ico" sizes="32x32">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <title>Administración — Cuenta Clara</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="bloqueada">
+
+  <!-- Portal administrativo: como la app, no muestra nada hasta confirmar la
+       sesión. Después, si la cuenta no es administradora, solo lo dice: la
+       base tampoco le entregaría nada (ver sql/05_calculos.sql). -->
+  <div class="verificando" id="verificando">
+    <img src="icon.svg" alt="" width="56" height="56">
+    <p>Verificando tu sesión…</p>
+    <a class="btn" href="login.html">Iniciar sesión</a>
+  </div>
+
+  <header class="barra-app">
+    <div class="barra-fila">
+      <div class="marca">
+        <img class="marca-icono" src="icon.svg" alt="">
+        <span class="marca-texto">Cuenta<b>Clara</b></span>
+      </div>
+      <div class="usuario">
+        <a class="salir enlace-admin" href="app.html">Volver a la app</a>
+        <button class="salir" id="btnSalir" type="button">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg>
+          Salir
+        </button>
+      </div>
+    </div>
+    <div class="saludo-bloque">
+      <p class="fecha">Portal administrativo</p>
+      <h1>Las cuentas de Cuenta Clara</h1>
+    </div>
+  </header>
+
+  <main class="admin">
+    <section class="solo-admin" id="soloAdmin" hidden>
+      <h2>Esta sección es solo para administradores</h2>
+      <p>Tu cuenta no tiene el rol de administrador. Si lo necesitás, pedíselo a quien administra Cuenta Clara.</p>
+      <a class="btn" href="app.html">Ir a la app</a>
+    </section>
+
+    <div id="panelAdmin" hidden>
+      <div class="resumen-admin" id="resumenAdmin"></div>
+      <p class="nota-admin">Ves cuántos datos tiene cada cuenta, no su contenido. Una cuenta desactivada no puede ver ni cargar datos hasta que la reactives, y a un administrador primero hay que quitarle el rol. Cada cambio queda registrado con quién lo hizo y cuándo.</p>
+      <div class="cuentas" id="listaCuentas"></div>
+    </div>
+  </main>
+
+  <output id="aviso" class="toast" aria-live="polite"></output>
+
+  <!-- integrity (SRI): si el CDN llegara a servir otro archivo, el navegador no lo ejecuta. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.115.0/dist/umd/supabase.js"
+          integrity="sha384-CLZeq1dk8+Uzrs7TVvBUdlFoV5F0DMqgRoeHa8g5wJcuPe5SkVfEvdxB0ZuzlnBQ" crossorigin="anonymous"></script>
+  <script src="js/config.js"></script>
+  <script src="js/sesion.js"></script>
+  <script src="js/datos.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
