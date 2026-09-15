@@ -3,8 +3,9 @@
   "private": true,
   "description": "Solo para las pruebas: el sitio es estático y no instala nada para publicarse.",
   "scripts": {
-    "test": "npm run test:sintaxis && npm run test:health && npm run test:sql && npm run test:ui",
+    "test": "npm run test:sintaxis && npm run test:logica && npm run test:health && npm run test:sql && npm run test:ui",
     "test:sintaxis": "node tests/sintaxis.mjs",
+    "test:logica": "node --test tests/logica.test.mjs",
     "test:health": "node tests/health.test.mjs",
     "test:sql": "node tests/sql.test.mjs",
     "test:ui": "node tests/ui.test.mjs",
