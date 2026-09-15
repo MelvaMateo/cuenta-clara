@@ -71,7 +71,8 @@ const lempiras = n => 'L ' + Math.round(n).toLocaleString('en-US');
 
     /* Lo que le pasa al precio que pondría "a ojo". */
     const veredicto = $('rVeredicto');
-    if (!(aOjo > 0)) {
+    // NaN (el campo vacío) también cuenta como "sin precio a ojo".
+    if (!Number.isFinite(aOjo) || aOjo <= 0) {
       veredicto.className = 'sim-veredicto';
       return;
     }

@@ -34,6 +34,12 @@ function leerNumero(texto) {
 const leerMonto = texto => Math.round(leerNumero(texto) * 100) / 100;       // a centavos, como la base
 const leerEntero = texto => { const n = leerNumero(texto); return Number.isInteger(n) ? n : NaN; };
 
+/* ¿Es un número de verdad, y mayor que cero (o al menos cero)? Lo que no se
+   entiende da NaN, y cualquier comparación con NaN es falsa: por eso no
+   alcanza con "x <= 0", que con NaN también da falso y dejaría pasar el valor. */
+const esPositivo = n => Number.isFinite(n) && n > 0;
+const esNoNegativo = n => Number.isFinite(n) && n >= 0;
+
 /* Los nombres los escribe la usuaria: se escapan antes de meterlos en el HTML,
    o un "<" en el nombre de un producto rompería la tarjeta. */
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
@@ -159,7 +165,7 @@ async function addCaja(e) {
   const f = e.target;
   const descripcion = f.descripcion.value.trim();
   const tipoCambio = parseFloat(f.tipoCambio.value);
-  if (!descripcion || !(tipoCambio > 0)) {
+  if (!descripcion || !esPositivo(tipoCambio)) {
     avisar('Falta el nombre de la caja o el tipo de cambio.');
     return;
   }
@@ -340,7 +346,7 @@ function calcularSugerido() {
   const precio = parseFloat(document.getElementById('inpPrecio').value);
   const cont = document.getElementById('sugerencia');
 
-  if (!caja || !(valor > 0)) { cont.className = 'sugerencia'; cont.textContent = ''; return; }
+  if (!caja || !esPositivo(valor)) { cont.className = 'sugerencia'; cont.textContent = ''; return; }
 
   /* El mismo cálculo que la vista productos_costeados (sql/05_calculos.sql):
      k ya viene en lempiras por dólar estimado; lo de tienda se convierte con
@@ -350,7 +356,7 @@ function calcularSugerido() {
   const sugerido = costo * (1 + Number(caja.colchon) * Number(caja.parte_usd))
                          * (1 + Number(caja.margen_deseado));
 
-  if (origen === 'lote' && !(Number(caja.k) > 0)) {
+  if (origen === 'lote' && !esPositivo(Number(caja.k))) {
     cont.className = 'sugerencia';
     cont.innerHTML = `Guardá este producto y la app repartirá el costo del lote.`;
     return;
@@ -411,7 +417,7 @@ async function addProducto(e) {
   const valorUsd = parseFloat(f.valorUsd.value);
   const cantidad = parseInt(f.cantidad.value);
   if (!f.cajaId.value) { avisar('Elegí de qué caja salió el producto.'); return; }
-  if (!nombre || !(valorUsd >= 0) || !(cantidad > 0)) {
+  if (!nombre || !esNoNegativo(valorUsd) || !esPositivo(cantidad)) {
     avisar('Falta el nombre, el valor o la cantidad.');
     return;
   }
@@ -452,7 +458,7 @@ async function venderProducto(id) {
   const texto = prompt(`¿Cuántas unidades de "${p.nombre}" vendiste?`, '1');
   if (texto === null) return;
   const cant = leerEntero(texto);
-  if (!(cant > 0)) { avisar('La cantidad tiene que ser un número entero mayor que cero.'); return; }
+  if (!esPositivo(cant)) { avisar('La cantidad tiene que ser un número entero mayor que cero.'); return; }
   try {
     await Claves.con(['vender', id, cant, p.stock],
       clave => Datos.venderProducto(clave, id, cant));
@@ -471,7 +477,7 @@ async function cambiarPrecio(id) {
     p.precio);
   if (texto === null) return;
   const nuevo = leerMonto(texto);
-  if (!(nuevo >= 0)) { avisar('Escribí el precio como un número, por ejemplo 150.50.'); return; }
+  if (!esNoNegativo(nuevo)) { avisar('Escribí el precio como un número, por ejemplo 150.50.'); return; }
   try {
     await Datos.cambiarPrecio(id, nuevo);
     avisar(`Precio de "${p.nombre}": ${fmt(nuevo)}`, 'ok');
@@ -601,7 +607,7 @@ async function abonar(id) {
   const texto = prompt(`Saldo de ${fi.clienta}: ${fmt(fi.saldo)}\n¿Cuánto abona?`, '');
   if (texto === null) return;
   const m = leerMonto(texto);
-  if (!(m > 0)) { avisar('Escribí el abono como un número mayor que cero, por ejemplo 150.50.'); return; }
+  if (!esPositivo(m)) { avisar('Escribí el abono como un número mayor que cero, por ejemplo 150.50.'); return; }
   if (m > Number(fi.saldo)) { avisar('El abono no puede ser mayor al saldo.'); return; }
   try {
     const saldo = await Claves.con(['abono', id, m, fi.saldo],
