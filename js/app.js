@@ -79,8 +79,8 @@ function mensajeDe(error) {
   return error.message;
 }
 
-/* Avisos: una tarjetita que aparece abajo y se va sola. Antes estaba arriba de
-   todo y no se veía al guardar desde el final de un formulario largo. */
+/* Avisos: una tarjetita que aparece abajo y se va sola. Antes aparecía en la
+   parte de arriba y no se veía al guardar desde el final de un formulario largo. */
 function avisar(msg, tipo = 'error') {
   const t = document.getElementById('aviso');
   t.replaceChildren();
