@@ -83,7 +83,8 @@
           <div class="plegable-interior">
             <form id="formCaja" class="form">
               <h3>Registrar una caja</h3>
-              <input name="descripcion" placeholder="Nombre de la caja (ej. Caja agosto)" required>
+              <label class="solo-lector" for="cajaDescripcion">Nombre de la caja</label>
+              <input id="cajaDescripcion" name="descripcion" placeholder="Nombre de la caja (ej. Caja agosto)" required>
               <div class="row">
                 <label class="campo">Llegó
                   <input name="fecha" type="date">
@@ -180,7 +181,8 @@
                 <select name="cajaId" id="selCaja" required></select>
               </label>
 
-              <input name="nombre" placeholder="Nombre del producto" required>
+              <label class="solo-lector" for="prodNombre">Nombre del producto</label>
+              <input id="prodNombre" name="nombre" placeholder="Nombre del producto" required>
 
               <label class="campo">¿De dónde vino?
                 <select name="origen" id="selOrigen">
@@ -261,9 +263,12 @@
           <div class="plegable-interior">
             <form id="formFiado" class="form">
               <h3>Nuevo fiado</h3>
-              <input name="clienta" placeholder="¿Quién se lo lleva?" required>
-              <input name="descripcion" placeholder="¿Qué llevó? (opcional)">
-              <input name="monto" type="number" step="0.01" placeholder="Monto (L)" required>
+              <label class="solo-lector" for="fiadoClienta">Quién se lo lleva</label>
+              <input id="fiadoClienta" name="clienta" placeholder="¿Quién se lo lleva?" required>
+              <label class="solo-lector" for="fiadoDescripcion">Qué llevó (opcional)</label>
+              <input id="fiadoDescripcion" name="descripcion" placeholder="¿Qué llevó? (opcional)">
+              <label class="solo-lector" for="fiadoMonto">Monto en lempiras</label>
+              <input id="fiadoMonto" name="monto" type="number" step="0.01" placeholder="Monto (L)" required>
               <button type="submit">Guardar fiado</button>
             </form>
           </div>

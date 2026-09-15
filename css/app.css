@@ -828,3 +828,19 @@ body.bloqueada .verificando {
   justify-items: center; gap: 14px; padding: 24px; text-align: center; color: var(--suave);
 }
 .verificando img { border-radius: 14px; }
+
+/* ===== Etiquetas solo para lectores de pantalla =====
+   Algunos campos se entienden a la vista por su texto de ejemplo, pero
+   necesitan una etiqueta real para quien usa un lector de pantalla. Esta la
+   oculta a la vista sin sacarla de la página. */
+label.solo-lector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
