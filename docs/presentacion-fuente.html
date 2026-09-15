@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Presentación de Cuenta Clara: el problema, la solución, las funcionalidades, la arquitectura, las tecnologías, el manual de uso, el cliente y la autora.">
+  <meta name="verificacion" content="LEARN-CAP-FE4FE1D4">
+  <title>Cuenta Clara — Presentación del producto</title>
+  <!-- Este archivo es la fuente. presentacion.html se genera con
+       `node scripts/generar-presentacion.mjs`, que reemplaza cada
+       src="captura:NOMBRE" por una captura real de la app en data: URI. -->
+  <style>
+    :root {
+      color-scheme: light;
+      --magenta: #b5179e;
+      --morado: #7209b7;
+      --texto: #2b2b2b;
+      --suave: #5d5663;
+      --fondo: #faf6f8;
+      --borde: #efe4ec;
+      --blanco: #fff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      color: var(--texto);
+      background: var(--fondo);
+      line-height: 1.6;
+    }
+    a { color: var(--morado); }
+    .contenedor { max-width: 960px; margin: 0 auto; padding: 0 20px; }
+
+    /* ----- portada ----- */
+    .portada { background: #6d0fae; color: var(--blanco); padding: 56px 0 44px; }
+    .portada h1 { margin: 0; font-size: clamp(2.2rem, 6vw, 3.4rem); line-height: 1.1; letter-spacing: -1px; }
+    .portada .bajada { font-size: 1.2rem; margin: 14px 0 26px; max-width: 640px; }
+    .portada a { color: var(--blanco); }
+    .botones { display: flex; flex-wrap: wrap; gap: 12px; }
+    /* .portada .boton y no solo .boton: si no, ".portada a" le pone texto blanco
+       al botón blanco y no se lee. */
+    .portada .boton {
+      display: inline-block; padding: 12px 20px; border-radius: 12px; font-weight: 700;
+      text-decoration: none; background: var(--blanco); color: #6d0fae;
+    }
+    .portada .boton.secundario { background: #4c0a78; color: var(--blanco); border: 1px solid var(--blanco); }
+    .portada .datos { margin-top: 26px; font-size: .95rem; }
+    .codigo { font-family: ui-monospace, Consolas, monospace; background: #4c0a78; color: var(--blanco); padding: 2px 8px; border-radius: 6px; }
+
+    /* ----- índice ----- */
+    .indice { background: var(--blanco); border-bottom: 1px solid var(--borde); position: sticky; top: 0; z-index: 2; }
+    .indice ol { list-style: none; margin: 0; padding: 10px 0; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .92rem; }
+    .indice a { text-decoration: none; font-weight: 600; }
+    /* En el celular, una sola línea que se desliza: en tres líneas, fija arriba,
+       tapaba el texto. */
+    @media (max-width: 640px) {
+      .indice ol { flex-wrap: nowrap; overflow-x: auto; white-space: nowrap; }
+    }
+
+    /* ----- secciones ----- */
+    section { padding: 44px 0 8px; }
+    h2 { font-size: 1.7rem; margin: 0 0 14px; color: #4c0a78; }
+    h3 { font-size: 1.15rem; margin: 26px 0 8px; }
+    p, li { max-width: 72ch; }
+    .nota { background: var(--blanco); border-left: 4px solid var(--magenta); padding: 12px 16px; border-radius: 0 10px 10px 0; }
+
+    /* ----- capturas ----- */
+    .capturas { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 22px; margin: 22px 0; }
+    figure { margin: 0; }
+    figure img {
+      display: block; width: 100%; max-width: 320px; margin: 0 auto; height: auto;
+      border-radius: 22px; border: 6px solid #2b2b2b; background: var(--blanco);
+    }
+    figcaption { text-align: center; font-size: .9rem; color: var(--suave); margin-top: 8px; }
+
+    /* ----- diagrama y tablas ----- */
+    .diagrama { background: var(--blanco); border: 1px solid var(--borde); border-radius: 16px; padding: 12px; overflow-x: auto; }
+    .diagrama svg { display: block; width: 100%; min-width: 600px; height: auto; }
+    .deslizar { display: none; font-size: .88rem; color: var(--suave); margin: 6px 0 0; }
+    @media (max-width: 640px) { .deslizar { display: block; } }
+    .tabla { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; background: var(--blanco); border-radius: 12px; overflow: hidden; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--borde); vertical-align: top; }
+    th { background: #f3e6f1; }
+
+    /* ----- manual ----- */
+    .pasos { counter-reset: paso; list-style: none; padding: 0; }
+    .pasos > li { counter-increment: paso; position: relative; padding-left: 52px; margin-bottom: 18px; }
+    .pasos > li::before {
+      content: counter(paso); position: absolute; left: 0; top: 0; width: 36px; height: 36px; border-radius: 50%;
+      background: var(--magenta); color: var(--blanco); font-weight: 800; display: grid; place-items: center;
+    }
+
+    footer { margin-top: 48px; padding: 28px 0 40px; background: #2b2b2b; color: var(--blanco); }
+    footer a { color: var(--blanco); }
+  </style>
+</head>
+<body>
+
+  <header class="portada">
+    <div class="contenedor">
+      <h1>Cuenta Clara</h1>
+      <p class="bajada">Sabé si cada caja que traés de USA te deja ganancia: el costo real de cada producto, a cuánto venderlo, tu stock y tus fiados, desde el celular.</p>
+      <div class="botones">
+        <a class="boton" href="https://www.melvamateo.site/">Abrir la app en vivo</a>
+        <a class="boton secundario" href="https://github.com/MelvaMateo/cuenta-clara">Ver el repositorio en GitHub</a>
+      </div>
+      <p class="datos">Presentación del producto · Capstone de Ingeniería de Software I · Código de verificación: <span class="codigo">LEARN-CAP-FE4FE1D4</span></p>
+    </div>
+  </header>
+
+  <nav class="indice" aria-label="Secciones">
+    <div class="contenedor">
+      <ol>
+        <li><a href="#problema">1. Problema</a></li>
+        <li><a href="#solucion">2. Solución</a></li>
+        <li><a href="#funcionalidades">3. Funcionalidades</a></li>
+        <li><a href="#arquitectura">4. Arquitectura</a></li>
+        <li><a href="#tecnologias">5. Tecnologías</a></li>
+        <li><a href="#manual">6. Manual de uso</a></li>
+        <li><a href="#cliente">7. Cliente</a></li>
+        <li><a href="#autor">8. Autor</a></li>
+      </ol>
+    </div>
+  </nav>
+
+  <main class="contenedor">
+
+    <section id="problema">
+      <h2>1. Problema</h2>
+      <p>En Honduras, muchas personas complementan sus ingresos trayendo cajas de productos desde Estados Unidos y revendiéndolos: maquillaje, cuidado de la piel, herramientas para el cabello, carteras, organizadores. Una misma caja mezcla dos formas de compra. Parte llega en <b>lotes surtidos</b>, que se pagan por un precio total sin saber cuánto costó cada cosa, y parte se compra en <b>tiendas físicas</b>, con recibo. Después se paga el flete, la aduana (en lempiras) y otros gastos.</p>
+      <p>El problema es que el precio de venta se pone <b>a ojo</b>. Casi nadie reparte el flete, la aduana y el costo del lote entre los productos, así que no hay forma de saber si la caja dejó ganancia. Es fácil vender un producto por debajo de lo que costó traerlo sin enterarse nunca. A eso se suma que el dólar cambia de un mes a otro, que el stock se lleva de memoria y que los fiados, lo que las clientas se llevan y pagan después, se anotan en un cuaderno, donde se pierden los abonos.</p>
+    </section>
+
+    <section id="solucion">
+      <h2>2. Solución</h2>
+      <p><b>Cuenta Clara</b> es una aplicación web progresiva (PWA): se abre con un enlace, se instala en la pantalla de inicio del celular sin pasar por una tienda de aplicaciones y guarda los datos en la nube, protegidos por cuenta.</p>
+      <p>La idea central es calcular el <b>costo real</b> de cada producto. Se registra lo que costó la caja, cada gasto en la moneda en que se pagó, y el tipo de cambio al que se pagó, que queda fijo con la caja para que los precios no cambien todos los días. Lo comprado en tienda conserva su costo exacto en dólares; lo que llegó en lote se reparte según el valor estimado de cada cosa, siempre anclado a lo que de verdad se pagó por el lote. Encima de eso, cada producto se lleva su parte de los gastos de traer la caja.</p>
+      <p>Con ese costo, la app sugiere a cuánto vender cada producto para ganar el margen que la emprendedora elija, más un <b>colchón</b> por si el dólar está más caro cuando toque reponer, y avisa en rojo cuando un precio queda por debajo del costo. Además lleva el stock con alertas de reposición y los fiados con sus abonos.</p>
+    </section>
+
+    <section id="funcionalidades">
+      <h2>3. Funcionalidades</h2>
+      <ul>
+        <li><b>Cajas con su costo real:</b> lote, compras en tienda, flete, aduana y otros gastos, cada uno en dólares o lempiras. La app muestra cuánto se invirtió, cuánto encarece traer la mercadería y cuánto falta vender para recuperar la inversión.</li>
+        <li><b>Precio sugerido en vivo:</b> mientras se carga un producto, dice cuánto cuesta de verdad y a cuánto conviene venderlo.</li>
+        <li><b>Aviso de pérdida:</b> los productos con un precio por debajo del costo aparecen marcados, con cuánto se pierde en cada uno.</li>
+        <li><b>Stock con fotos y alertas:</b> cada producto con su foto tomada desde el celular, las unidades que quedan y el aviso cuando hay que reponer.</li>
+        <li><b>Fiados y abonos:</b> quién debe, cuánto, y cada abono, sin poder abonar más de lo que se debe.</li>
+        <li><b>Resumen del negocio:</b> lo que falta cobrar, lo que queda por vender y cuánto se recuperó de cada caja.</li>
+        <li><b>A prueba de cortes de conexión:</b> si la señal se cae justo al guardar, reintentar no duplica la venta ni el abono.</li>
+      </ul>
+      <div class="capturas">
+        <figure>
+          <img src="captura:cajas" alt="Pestaña Cajas: indicadores de inversión y recuperación, y la tarjeta de la caja con su anillo de recuperación y sus costos." width="390" height="844">
+          <figcaption>Cajas: cuánto se invirtió y cuánto se recuperó.</figcaption>
+        </figure>
+        <figure>
+          <img src="captura:stock" alt="Pestaña Stock: tarjetas de productos con su costo, precio, precio sugerido y el stock que queda." width="390" height="844">
+          <figcaption>Stock: costo, precio y sugerido de cada producto.</figcaption>
+        </figure>
+        <figure>
+          <img src="captura:producto" alt="Formulario de nuevo producto con la sugerencia de precio y el aviso de que a 150 lempiras se vende con pérdida." width="390" height="844">
+          <figcaption>Nuevo producto: el precio sugerido y el aviso de pérdida.</figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section id="arquitectura">
+      <h2>4. Arquitectura</h2>
+      <p>La aplicación no tiene un servidor propio. El sitio es estático y lo sirve Vercel; los datos, el inicio de sesión y las fotos los maneja Supabase. Toda la seguridad vive en la base de datos: cada tabla tiene políticas de seguridad por fila (RLS), así que cada cuenta ve y cambia solo lo suyo, aunque la aplicación hable directo con la base. Las operaciones que tocan varias filas (vender, anotar un fiado, abonar) son funciones de la base que corren en una sola transacción y no se repiten si se reintentan.</p>
+      <div class="diagrama">
+        <svg viewBox="0 0 820 400" role="img" aria-labelledby="diagTitulo diagDesc" xmlns="http://www.w3.org/2000/svg">
+          <title id="diagTitulo">Arquitectura de Cuenta Clara</title>
+          <desc id="diagDesc">La emprendedora usa la PWA desde el celular. Vercel sirve la PWA y el healthcheck. La PWA habla con Supabase: Auth para la sesión, que delega en Google; PostgreSQL con RLS para los datos; y Storage para las fotos. GitHub Actions corre las pruebas y Vercel publica solo si pasan.</desc>
+          <defs>
+            <marker id="flecha" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+              <path d="M0 0 L10 5 L0 10 z" fill="#4c0a78"/>
+            </marker>
+          </defs>
+          <g font-family="system-ui, sans-serif" font-size="14" fill="#2b2b2b">
+            <rect x="20" y="150" width="150" height="80" rx="14" fill="#fde7f7" stroke="#b5179e" stroke-width="2"/>
+            <text x="95" y="185" text-anchor="middle" font-weight="700">Emprendedora</text>
+            <text x="95" y="207" text-anchor="middle" font-size="12">desde el celular</text>
+
+            <rect x="240" y="70" width="190" height="240" rx="16" fill="#f3e6f1" stroke="#7209b7" stroke-width="2"/>
+            <text x="335" y="98" text-anchor="middle" font-weight="700">Vercel</text>
+            <rect x="260" y="115" width="150" height="80" rx="12" fill="#fff" stroke="#7209b7"/>
+            <text x="335" y="148" text-anchor="middle" font-weight="700">PWA</text>
+            <text x="335" y="170" text-anchor="middle" font-size="12">HTML, CSS, JS</text>
+            <text x="335" y="186" text-anchor="middle" font-size="12">+ service worker</text>
+            <rect x="260" y="215" width="150" height="75" rx="12" fill="#fff" stroke="#7209b7"/>
+            <text x="335" y="247" text-anchor="middle" font-weight="700">Healthcheck</text>
+            <text x="335" y="268" text-anchor="middle" font-size="12">/api/health</text>
+
+            <rect x="500" y="40" width="300" height="300" rx="16" fill="#e8f4f1" stroke="#1b7a6b" stroke-width="2"/>
+            <text x="650" y="68" text-anchor="middle" font-weight="700">Supabase</text>
+            <rect x="520" y="85" width="260" height="60" rx="12" fill="#fff" stroke="#1b7a6b"/>
+            <text x="650" y="112" text-anchor="middle" font-weight="700">Auth</text>
+            <text x="650" y="132" text-anchor="middle" font-size="12">correo o Google (OAuth)</text>
+            <rect x="520" y="160" width="260" height="90" rx="12" fill="#fff" stroke="#1b7a6b"/>
+            <text x="650" y="188" text-anchor="middle" font-weight="700">PostgreSQL con RLS</text>
+            <text x="650" y="208" text-anchor="middle" font-size="12">tablas, vistas del costo real</text>
+            <text x="650" y="226" text-anchor="middle" font-size="12">y funciones idempotentes</text>
+            <rect x="520" y="265" width="260" height="55" rx="12" fill="#fff" stroke="#1b7a6b"/>
+            <text x="650" y="290" text-anchor="middle" font-weight="700">Storage</text>
+            <text x="650" y="308" text-anchor="middle" font-size="12">fotos, una carpeta por cuenta</text>
+
+            <rect x="240" y="340" width="190" height="50" rx="12" fill="#fff4dc" stroke="#b56a00" stroke-width="2"/>
+            <text x="335" y="362" text-anchor="middle" font-weight="700">GitHub Actions (CI)</text>
+            <text x="335" y="380" text-anchor="middle" font-size="12">publica solo si las pruebas pasan</text>
+
+            <g stroke="#4c0a78" stroke-width="2" fill="none" marker-end="url(#flecha)">
+              <path d="M170 190 L258 160"/>
+              <path d="M410 140 L518 115"/>
+              <path d="M410 160 L518 200"/>
+              <path d="M410 175 L518 285"/>
+              <path d="M410 252 L518 120"/>
+              <path d="M335 340 L335 312"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <p class="deslizar">Deslizá el diagrama hacia la izquierda para verlo completo.</p>
+      <p>El detalle, con los diagramas C4 de contexto y de contenedores, está en el documento de <a href="https://github.com/MelvaMateo/cuenta-clara/blob/main/docs/arquitectura.md">arquitectura</a>, y las dos decisiones principales en sus registros de decisión (ADR): <a href="https://github.com/MelvaMateo/cuenta-clara/blob/main/docs/adr/0001-supabase-como-backend-con-rls.md">Supabase como backend con la seguridad en RLS</a> y <a href="https://github.com/MelvaMateo/cuenta-clara/blob/main/docs/adr/0002-escrituras-idempotentes-con-clave.md">escrituras idempotentes con una clave generada por la app</a>.</p>
+    </section>
+
+    <section id="tecnologias">
+      <h2>5. Tecnologías</h2>
+      <div class="tabla">
+        <table>
+          <thead>
+            <tr><th scope="col">Parte</th><th scope="col">Tecnología</th><th scope="col">Por qué</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>Frontend</td><td>HTML, CSS y JavaScript sin compilación; service worker (PWA)</td><td>Se usa desde el celular, se instala sin tienda y abre sin internet para consultar.</td></tr>
+            <tr><td>Backend</td><td>Supabase (Auth, API REST y Storage)</td><td>Sin servidor propio que mantener ni pagar; el plan gratis alcanza.</td></tr>
+            <tr><td>Base de datos</td><td>PostgreSQL con RLS, vistas y funciones</td><td>Los datos son relacionales y el costo real se calcula en un solo lugar.</td></tr>
+            <tr><td>Acceso</td><td>Correo y contraseña, o Google (OAuth 2.0)</td><td>Entrar con la cuenta que ya se usa en el celular.</td></tr>
+            <tr><td>Publicación</td><td>Vercel, con dominio propio, HTTPS y headers de seguridad</td><td>Cada cambio aprobado se publica solo.</td></tr>
+            <tr><td>CI/CD</td><td>GitHub Actions y Deployment Checks de Vercel</td><td>Solo llega a producción lo que pasó las pruebas.</td></tr>
+            <tr><td>Calidad</td><td>node:test, PGlite, Chrome con Puppeteer, cobertura Istanbul y SonarCloud</td><td>Pruebas unitarias, de la base y de la interfaz; 0 bugs y 0 code smells.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="manual">
+      <h2>6. Manual de uso paso a paso</h2>
+      <ol class="pasos">
+        <li><b>Entrá a la app.</b> Abrí <a href="https://www.melvamateo.site/">www.melvamateo.site</a> y tocá <i>Iniciar sesión</i>. Podés entrar con tu correo y contraseña o con tu cuenta de Google.</li>
+        <li><b>Instalala en el celular.</b> En el menú del navegador elegí <i>Agregar a la pantalla de inicio</i>. Desde ahí se abre como una aplicación más.</li>
+        <li><b>Registrá una caja.</b> En la pestaña <i>Cajas</i>, tocá <i>Registrar caja</i> y completá el nombre, la fecha de llegada, lo que pagaste por el lote, el flete, la aduana y otros gastos, cada uno con su moneda. Poné el tipo de cambio al que pagaste, la ganancia que querés y el colchón por el dólar.</li>
+        <li><b>Cargá los productos.</b> En <i>Stock</i>, tocá <i>Agregar producto</i>: elegí la caja, escribí el nombre, decí si vino en el lote o de una tienda, el valor en dólares y cuántas unidades llegaron. Si querés, tomale una foto. Mientras escribís el precio, la app te dice cuánto te cuesta y a cuánto venderlo; si el precio queda por debajo del costo, te avisa.</li>
+        <li><b>Vendé.</b> Cuando vendas algo, buscá el producto en <i>Stock</i> y tocá <i>Vender</i>. La app descuenta las unidades y suma la venta a la caja, así sabés cuánto llevás recuperado.</li>
+        <li><b>Anotá los fiados.</b> En <i>Fiados</i>, anotá quién se lleva algo, qué se llevó y cuánto debe. Cuando te pague una parte, tocá <i>Registrar abono</i>: el saldo se actualiza y la app no deja abonar más de lo que se debe.</li>
+        <li><b>Revisá el resumen.</b> En <i>Resumen</i> ves cuánto te deben, cuánto tenés por vender, qué productos se están vendiendo con pérdida, qué hay que reponer y cuánto recuperaste de cada caja.</li>
+        <li><b>Si te quedás sin señal.</b> Podés abrir la app y consultar lo último que se cargó. Para guardar algo nuevo hace falta conexión; si se cortó justo al guardar, volvé a intentarlo: la app no lo registra dos veces.</li>
+      </ol>
+      <div class="capturas">
+        <figure>
+          <img src="captura:fiados" alt="Pestaña Fiados: indicadores de lo que falta cobrar y tarjetas de cada clienta con su saldo y la barra de lo abonado." width="390" height="844">
+          <figcaption>Fiados: quién debe, cuánto, y lo que ya abonó.</figcaption>
+        </figure>
+        <figure>
+          <img src="captura:resumen" alt="Pestaña Resumen: lo que falta cobrar, lo que queda por vender, la alerta de productos con pérdida y la recuperación de cada caja." width="390" height="844">
+          <figcaption>Resumen: cómo va el negocio, de un vistazo.</figcaption>
+        </figure>
+      </div>
+      <p class="nota">Las capturas son de la app real, con los datos de muestra de una caja de ejemplo, no datos de ninguna persona.</p>
+    </section>
+
+    <section id="cliente">
+      <h2>7. Cliente</h2>
+      <p>Cuenta Clara nació para una emprendedora hondureña que trae cajas desde Estados Unidos con productos de belleza y artículos variados, y los revende en su salón y por redes sociales. Trabaja sola, maneja todo desde el celular y no tiene presupuesto para tecnología. Antes ponía los precios a ojo, llevaba los fiados en un cuaderno y no sabía si cada caja le dejaba ganancia.</p>
+      <p>Por privacidad, en esta presentación pública no uso su nombre. Lo que ella necesitaba, saber el costo real, poner precios con ganancia y llevar el stock y los fiados, lo comparte cualquier persona que importe y revenda, así que la aplicación quedó general: sirve para cualquier emprendedor con el mismo negocio.</p>
+    </section>
+
+    <section id="autor">
+      <h2>8. Autor</h2>
+      <p><b>Melva Odany Mateo Santos</b>, estudiante de Ingeniería en Informática. Cuenta Clara es mi proyecto capstone de la clase de Ingeniería de Software I: lo diseñé, lo desarrollé, lo probé y lo publiqué de principio a fin, con Claude como asistente de programación.</p>
+      <p>Código en GitHub: <a href="https://github.com/MelvaMateo/cuenta-clara">github.com/MelvaMateo/cuenta-clara</a> · Aplicación en vivo: <a href="https://www.melvamateo.site/">www.melvamateo.site</a> · Código de verificación: <span class="codigo">LEARN-CAP-FE4FE1D4</span></p>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="contenedor">
+      <p><b>Cuenta Clara</b> · <a href="https://www.melvamateo.site/">Abrir la app</a> · <a href="https://github.com/MelvaMateo/cuenta-clara">Repositorio en GitHub</a> · Código de verificación: LEARN-CAP-FE4FE1D4</p>
+    </div>
+  </footer>
+
+</body>
+</html>
