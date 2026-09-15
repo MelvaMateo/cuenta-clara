@@ -34,6 +34,7 @@ Lo comprado en tiendas conserva su costo exacto; lo que llega en lotes surtidos 
 3. Creá la base: Supabase → **SQL Editor** → corré en orden los scripts de [sql/](sql/), del `01` al `06`. Son idempotentes: sirven igual para una base nueva que para actualizar una que ya existe, y se pueden repetir sin romper nada. El detalle está en [sql/README.md](sql/README.md).
 4. Opcional, para la demostración: `07_datos_muestra.sql` carga una caja de ejemplo en la cuenta que indiques.
 5. Para revisar que todo quedó bien: `08_verificacion.sql`, que solo lee.
+6. Para el portal administrativo: `10_primer_administrador.sql`, con el correo de la primera cuenta administradora cambiado en el SQL Editor (esa cuenta tiene que haber iniciado sesión una vez). Los demás administradores se nombran desde el portal.
 
 El acceso es por correo y contraseña. El botón de **Google** aparece solo cuando el proveedor se activa en Supabase: la app consulta qué proveedores hay antes de mostrarlo.
 
@@ -60,12 +61,14 @@ El sitio se publica en Vercel (ver "Pruebas y CI/CD"). Sus direcciones:
 | Portal privado (requiere sesión) | https://www.melvamateo.site/app.html |
 | Healthcheck (JSON) | https://www.melvamateo.site/api/health |
 | Presentación del producto | https://www.melvamateo.site/presentacion.html |
+| Portal administrativo (solo administradores) | https://www.melvamateo.site/admin.html |
 
 - **Instalable (PWA):** manifest con íconos PNG de 192 y 512 (y uno *maskable* para Android), ícono para iPhone y un service worker que deja abrir la app sin internet. Las imágenes salen de `icon.svg` con `node scripts/generar-imagenes.mjs`.
 - **Buscadores y redes:** título, descripción, Open Graph con la tarjeta `img/og.png`, y `robots.txt`, que deja afuera la app privada.
 - **Seguridad:** `vercel.json` manda un Content-Security-Policy que solo deja cargar lo que el sitio usa, más HSTS, `nosniff`, `Referrer-Policy`, `Permissions-Policy` y la prohibición de meter el sitio en un iframe.
 - **Portal privado:** sin sesión, el servidor no entrega `app.html`: una cookie (`cc_sesion`) marca que en ese navegador hay sesión, y sin ella Vercel redirige al login (`redirects` en `vercel.json`). Esa cookie es solo un aviso, no la sesión: si hay marca pero la sesión venció, la app la borra, no muestra nada y manda al login. Los datos nunca salen de la base sin sesión: los protege el RLS.
 - **Healthcheck:** `/api/health` responde en JSON si el sitio y Supabase están disponibles: 200 con `"status": "ok"`, o 503 con `"degraded"` y el motivo si Supabase no responde.
+- **Portal administrativo:** `admin.html`, solo para cuentas con rol de administrador. Lista las cuentas con sus totales (no su contenido), da o quita el rol de administrador y desactiva o reactiva cuentas; a una cuenta desactivada el RLS deja de entregarle sus datos. Todo pasa por funciones de la base que primero verifican el rol, sin ninguna clave secreta fuera de Supabase ([ADR-3](docs/adr/0003-portal-administrativo-con-funciones-de-la-base.md)).
 - **404:** una dirección que no existe muestra `404.html`, con el diseño del sitio.
 
 ## Pruebas y CI/CD
@@ -104,6 +107,7 @@ Solo llega a producción lo que pasó el CI:
 | `index.html` | Landing page: qué resuelve la app y acceso al login |
 | `login.html` | Pantalla de acceso (Supabase Auth: correo y contraseña; Google si está activo) |
 | `app.html` | La aplicación: cajas, stock, fiados y resumen |
+| `admin.html`, `js/admin.js`, `css/admin.css` | El portal administrativo: cuentas, roles y cuentas desactivadas |
 | `css/base.css` | Reset, colores de la marca y botón, compartidos por las tres páginas |
 | `css/landing.css`, `css/login.css`, `css/app.css` | Estilos propios de cada página |
 | `js/config.js` | URL y clave pública del proyecto de Supabase |

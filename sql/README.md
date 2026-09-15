@@ -4,15 +4,16 @@ Se corren **en orden**, en Supabase → **SQL Editor** → *New query* → pegar
 
 | # | Script | Qué hace | ¿Hace falta? |
 |---|---|---|---|
-| 01 | `01_tablas.sql` | Las seis tablas con su estructura final, y los textos en forma canónica | Sí |
+| 01 | `01_tablas.sql` | Las seis tablas del negocio y la del estado de las cuentas (rol y activa), con su estructura final, y los textos en forma canónica | Sí |
 | 02 | `02_migraciones.sql` | Lleva una base de una versión anterior a la estructura de 01. En una base nueva no hace nada | Sí |
 | 03 | `03_indices.sql` | Índices para el RLS y para las claves foráneas | Sí |
-| 04 | `04_seguridad.sql` | RLS: cada cuenta ve y cambia solo lo suyo | Sí |
-| 05 | `05_calculos.sql` | Las vistas que calculan el costo real de cada producto, el resumen de cada caja y los saldos de los fiados, y las operaciones de la app: vender, anotar un fiado y abonar | Sí |
+| 04 | `04_seguridad.sql` | RLS: cada cuenta ve y cambia solo lo suyo, y una cuenta desactivada no ve nada | Sí |
+| 05 | `05_calculos.sql` | Las vistas que calculan el costo real de cada producto, el resumen de cada caja y los saldos de los fiados, y las operaciones de la app: vender, anotar un fiado y abonar; y las funciones del portal administrativo | Sí |
 | 06 | `06_fotos.sql` | El bucket de fotos y quién puede listar, subir o borrar | Sí |
 | 07 | `07_datos_muestra.sql` | Una caja de ejemplo en la cuenta que indiques (`v_correo`) | No |
 | 08 | `08_verificacion.sql` | Revisa estructura, seguridad y datos. Solo lee | No |
 | 09 | `09_exportar_esquema.sql` | Exporta el modelo de datos real en JSON (tablas, filas, columnas, índices, relaciones y políticas): es lo que se guarda en `docs/db-export.json`. Solo lee | No |
+| 10 | `10_primer_administrador.sql` | Nombra al primer administrador del portal. Cambiá el correo en el SQL Editor antes de correrlo; los demás se nombran desde el portal | Para el portal |
 
 ## Todos son idempotentes
 
