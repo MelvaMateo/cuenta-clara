@@ -59,6 +59,7 @@ El sitio se publica en Vercel (ver "Pruebas y CI/CD"). Sus direcciones:
 | Login | https://www.melvamateo.site/login.html |
 | Portal privado (requiere sesión) | https://www.melvamateo.site/app.html |
 | Healthcheck (JSON) | https://www.melvamateo.site/api/health |
+| Presentación del producto | https://www.melvamateo.site/presentacion.html |
 
 - **Instalable (PWA):** manifest con íconos PNG de 192 y 512 (y uno *maskable* para Android), ícono para iPhone y un service worker que deja abrir la app sin internet. Las imágenes salen de `icon.svg` con `node scripts/generar-imagenes.mjs`.
 - **Buscadores y redes:** título, descripción, Open Graph con la tarjeta `img/og.png`, y `robots.txt`, que deja afuera la app privada.
@@ -117,6 +118,7 @@ Solo llega a producción lo que pasó el CI:
 | `manifest.json`, `sw.js`, `icon.svg` | Soporte PWA (instalable, offline) |
 | `img/`, `favicon.ico`, `apple-touch-icon.png` | Íconos para instalar la app y la tarjeta para compartir; se generan con `scripts/generar-imagenes.mjs` |
 | `404.html`, `robots.txt` | La página de "no existe" y las reglas para buscadores |
+| `presentacion.html` | La presentación del producto en un solo archivo, con las capturas embebidas. Se genera con `node scripts/generar-presentacion.mjs` a partir de `docs/presentacion-fuente.html` |
 | `vercel.json` | Headers de seguridad y la configuración del healthcheck |
 | `api/health.js` | El healthcheck: `GET /api/health` |
 | `PLAN.md` | Plan y diseño completo: problema, backlog, arquitectura, calidad, despliegue y validación |
