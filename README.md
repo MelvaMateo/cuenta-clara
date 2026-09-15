@@ -63,7 +63,7 @@ El sitio se publica en Vercel (ver "Pruebas y CI/CD"). Sus direcciones:
 - **Instalable (PWA):** manifest con íconos PNG de 192 y 512 (y uno *maskable* para Android), ícono para iPhone y un service worker que deja abrir la app sin internet. Las imágenes salen de `icon.svg` con `node scripts/generar-imagenes.mjs`.
 - **Buscadores y redes:** título, descripción, Open Graph con la tarjeta `img/og.png`, y `robots.txt`, que deja afuera la app privada.
 - **Seguridad:** `vercel.json` manda un Content-Security-Policy que solo deja cargar lo que el sitio usa, más HSTS, `nosniff`, `Referrer-Policy`, `Permissions-Policy` y la prohibición de meter el sitio en un iframe.
-- **Portal privado:** hasta confirmar la sesión, `app.html` solo muestra "Verificando tu sesión"; sin sesión, manda al login. Los datos nunca salen de la base sin sesión: los protege el RLS.
+- **Portal privado:** sin sesión, el servidor no entrega `app.html`: una cookie (`cc_sesion`) marca que en ese navegador hay sesión, y sin ella Vercel redirige al login (`redirects` en `vercel.json`). Esa cookie es solo un aviso, no la sesión: si hay marca pero la sesión venció, la app la borra, no muestra nada y manda al login. Los datos nunca salen de la base sin sesión: los protege el RLS.
 - **Healthcheck:** `/api/health` responde en JSON si el sitio y Supabase están disponibles: 200 con `"status": "ok"`, o 503 con `"degraded"` y el motivo si Supabase no responde.
 - **404:** una dirección que no existe muestra `404.html`, con el diseño del sitio.
 
