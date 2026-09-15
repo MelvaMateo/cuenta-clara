@@ -4,11 +4,13 @@
    revés (primero la caché) y cada cambio en el HTML, el CSS o el JS quedaba
    invisible hasta acordarse de subir a mano el número de versión de abajo. */
 const CACHE = 'cuenta-clara-v13';
+/* app.html no va: sin sesión, Vercel la redirige al login, y guardar esa
+   respuesta dejaría el login en lugar de la app. Se guarda sola la primera vez
+   que se abre con sesión (ver el fetch de abajo). */
 const ASSETS = [
   './',
   './index.html',
   './login.html',
-  './app.html',
   './css/base.css',
   './css/landing.css',
   './css/login.css',
@@ -50,7 +52,7 @@ self.addEventListener('fetch', e => {
   e.respondWith(
     fetch(e.request)
       .then(res => {
-        if (res.ok) {
+        if (res.ok && !res.redirected) {          // una redirección no es la página pedida
           const copia = res.clone();                  // guarda la última versión buena
           caches.open(CACHE).then(c => c.put(e.request, copia));
         }
