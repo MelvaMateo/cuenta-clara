@@ -866,3 +866,9 @@ body.desactivada .cuenta-desactivada {
 }
 body.desactivada .cuenta-desactivada p { color: var(--suave); margin: 10px 0 18px; }
 body.desactivada main, body.desactivada .tabbar { display: none !important; }
+
+/* En el celular, el enlace al portal queda solo con su ícono: con el texto,
+   "Administración", el avatar y "Salir" no entraban y Salir quedaba cortado. */
+@media (max-width: 440px) {
+  .enlace-admin .texto-largo { display: none; }
+}
