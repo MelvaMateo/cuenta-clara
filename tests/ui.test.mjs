@@ -99,6 +99,21 @@ window.supabase = { createClient: () => {
     return q;
   };
   const subidos = new Set();
+  // El portal administrativo: con ?noadmin la cuenta no es administradora, y
+  // con ?desactivada un administrador la desactivó.
+  const CUENTAS = [
+    { user_id: 'u1', correo: 'prueba@cuenta-clara.test', proveedor: 'google', creada_en: '2026-09-01T12:00:00Z',
+      ultimo_acceso: '2026-09-15T12:00:00Z', es_admin: true, activa: true, cajas: 1, productos: 8, ventas: 7, por_cobrar: 1600 },
+    { user_id: 'u2', correo: 'ana@ejemplo.com', proveedor: 'email', creada_en: '2026-09-05T12:00:00Z',
+      ultimo_acceso: null, es_admin: false, activa: true, cajas: 0, productos: 0, ventas: 0, por_cobrar: 0 },
+    { user_id: 'u3', correo: 'luis@ejemplo.com', proveedor: 'google', creada_en: '2026-09-07T12:00:00Z',
+      ultimo_acceso: '2026-09-08T12:00:00Z', es_admin: false, activa: false, cajas: 2, productos: 5, ventas: 3, por_cobrar: 250 },
+  ];
+  const LECTURAS = {
+    es_admin: () => !location.search.includes('noadmin'),
+    cuenta_activa: () => !location.search.includes('desactivada'),
+    admin_cuentas: () => CUENTAS,
+  };
   return {
     auth: {
       // Con ?sinsesion en la dirección, simula que nadie inició sesión. Se
@@ -111,8 +126,11 @@ window.supabase = { createClient: () => {
       signOut: async () => ({}),
     },
     from: consulta,
-    rpc: async (nombre, params) => escribir({ tipo: 'rpc', nombre, params },
-      { data: nombre === 'registrar_abono' ? 100 : nombre === 'vender_producto' ? 3 : 'id-clienta', error: null }),
+    // Las lecturas del portal no son escrituras: no se anotan ni se cortan.
+    rpc: async (nombre, params) => (nombre in LECTURAS
+      ? { data: LECTURAS[nombre](), error: null }
+      : escribir({ tipo: 'rpc', nombre, params },
+          { data: nombre === 'registrar_abono' ? 100 : nombre === 'vender_producto' ? 3 : 'id-clienta', error: null })),
     storage: { from: () => ({
       getPublicUrl: () => ({ data: { publicUrl: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7' } }),
       upload: async (ruta, blob, opciones) => {
@@ -364,6 +382,37 @@ try {
      'con sesión (como al volver de Google), el login marca la sesión y pasa a la app');
   ok(!(await entra.page.evaluate(async () => { await Sesion.cerrar(); return document.cookie.includes('cc_sesion'); })),
      'cerrar sesión borra la marca');
+
+  // ------------------------------------------------ portal administrativo
+  ok(await page.$eval('#enlaceAdmin', el => !el.hidden), 'a un administrador la app le muestra el enlace al portal');
+  const comun = await abrir('/app.html?noadmin');
+  await espera(500);
+  ok(await comun.page.$eval('#enlaceAdmin', el => el.hidden), 'a una cuenta común no le aparece el enlace');
+  const apagada = await abrir('/app.html?desactivada');
+  await espera(500);
+  ok(await apagada.page.$eval('#cuentaDesactivada', el => getComputedStyle(el).display !== 'none')
+     && await apagada.page.$eval('.tabbar', el => getComputedStyle(el).display === 'none'),
+     'una cuenta desactivada ve el aviso, no la app');
+  const portal = await abrir('/admin.html');
+  await espera(600);
+  const tarjetas = await portal.page.$$eval('#listaCuentas .cuenta', els => els.length);
+  const propiaBloqueada = await portal.page.$eval('button[data-id="u1"][data-accion="rol"]', b => b.disabled);
+  ok(tarjetas === 3 && propiaBloqueada, `el portal lista las cuentas (${tarjetas}) y no deja quitarse el propio rol`);
+  const clic = (id, accion) => portal.page.$eval(`button[data-id="${id}"][data-accion="${accion}"]`, b => b.click());
+  await clic('u2', 'rol');
+  await espera(400);
+  await clic('u3', 'estado');
+  await espera(400);
+  const cambios = (await portal.page.evaluate(() => window.__llamadas))
+    .filter(l => /^admin_cambiar/.test(l.nombre)).map(l => `${l.nombre}(${Object.values(l.params).join(',')})`);
+  ok(cambios.join(' | ') === 'admin_cambiar_rol(u2,true) | admin_cambiar_estado(u3,true)',
+     `los botones mandan el cambio correcto: ${cambios.join(' | ') || 'ninguno'}`);
+  const noEsAdmin = await abrir('/admin.html?noadmin');
+  await espera(500);
+  ok(await noEsAdmin.page.$eval('#soloAdmin', el => !el.hidden) && await noEsAdmin.page.$eval('#panelAdmin', el => el.hidden),
+     'a una cuenta común el portal le dice que es solo para administradores');
+  const adminSinMarca = await fetch(`${BASE}/admin.html`, { redirect: 'manual' });
+  ok(adminSinMarca.status === 307, `sin la marca de sesión, /admin.html también redirige al login (${adminSinMarca.status})`);
 
   const perdida = await abrir('/esta-pagina-no-existe');
   ok(perdida.respuesta.status() === 404 && (await perdida.page.content()).includes('Esta página no existe'),
