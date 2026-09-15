@@ -1,0 +1,436 @@
+{
+	"generado_at": "2026-09-15T13:58:08Z",
+	"motor": "postgres",
+	"tablas": [
+		{
+			"nombre": "abonos",
+			"filas": 3,
+			"columnas": [
+				{
+					"nombre": "id",
+					"tipo": "uuid",
+					"pk": true,
+					"nulo": false
+				},
+				{
+					"nombre": "owner_id",
+					"tipo": "uuid",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "venta_id",
+					"tipo": "uuid",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "monto",
+					"tipo": "numeric(10,2)",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "fecha",
+					"tipo": "timestamp with time zone",
+					"pk": false,
+					"nulo": false
+				}
+			],
+			"indices": [
+				"abonos_owner_idx",
+				"abonos_pkey",
+				"abonos_venta_idx"
+			],
+			"relaciones": [
+				{
+					"columna": "venta_id",
+					"referencia": "ventas.id"
+				}
+			],
+			"politicas_rls": [
+				"solo lo propio"
+			]
+		},
+		{
+			"nombre": "cajas",
+			"filas": 1,
+			"columnas": [
+				{
+					"nombre": "id",
+					"tipo": "uuid",
+					"pk": true,
+					"nulo": false
+				},
+				{
+					"nombre": "owner_id",
+					"tipo": "uuid",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "descripcion",
+					"tipo": "text",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "fecha",
+					"tipo": "date",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "lote",
+					"tipo": "numeric(10,2)",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "flete",
+					"tipo": "numeric(10,2)",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "aduana",
+					"tipo": "numeric(10,2)",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "otros",
+					"tipo": "numeric(10,2)",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "tipo_cambio",
+					"tipo": "numeric(10,4)",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "margen_deseado",
+					"tipo": "numeric(4,3)",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "creada_en",
+					"tipo": "timestamp with time zone",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "lote_moneda",
+					"tipo": "text",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "flete_moneda",
+					"tipo": "text",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "aduana_moneda",
+					"tipo": "text",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "otros_moneda",
+					"tipo": "text",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "colchon",
+					"tipo": "numeric(4,3)",
+					"pk": false,
+					"nulo": false
+				}
+			],
+			"indices": [
+				"cajas_id_dueno_unico",
+				"cajas_owner_idx",
+				"cajas_pkey"
+			],
+			"relaciones": [],
+			"politicas_rls": [
+				"solo lo propio"
+			]
+		},
+		{
+			"nombre": "clientas",
+			"filas": 3,
+			"columnas": [
+				{
+					"nombre": "id",
+					"tipo": "uuid",
+					"pk": true,
+					"nulo": false
+				},
+				{
+					"nombre": "owner_id",
+					"tipo": "uuid",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "nombre",
+					"tipo": "text",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "telefono",
+					"tipo": "text",
+					"pk": false,
+					"nulo": true
+				},
+				{
+					"nombre": "creada_en",
+					"tipo": "timestamp with time zone",
+					"pk": false,
+					"nulo": false
+				}
+			],
+			"indices": [
+				"clientas_id_dueno_unico",
+				"clientas_nombre_unico",
+				"clientas_owner_idx",
+				"clientas_pkey"
+			],
+			"relaciones": [],
+			"politicas_rls": [
+				"solo lo propio"
+			]
+		},
+		{
+			"nombre": "detalle_venta",
+			"filas": 5,
+			"columnas": [
+				{
+					"nombre": "id",
+					"tipo": "uuid",
+					"pk": true,
+					"nulo": false
+				},
+				{
+					"nombre": "owner_id",
+					"tipo": "uuid",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "venta_id",
+					"tipo": "uuid",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "producto_id",
+					"tipo": "uuid",
+					"pk": false,
+					"nulo": true
+				},
+				{
+					"nombre": "cantidad",
+					"tipo": "integer",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "precio_unit",
+					"tipo": "numeric(10,2)",
+					"pk": false,
+					"nulo": false
+				}
+			],
+			"indices": [
+				"detalle_owner_idx",
+				"detalle_producto_idx",
+				"detalle_venta_idx",
+				"detalle_venta_pkey"
+			],
+			"relaciones": [
+				{
+					"columna": "producto_id",
+					"referencia": "productos.id"
+				},
+				{
+					"columna": "venta_id",
+					"referencia": "ventas.id"
+				}
+			],
+			"politicas_rls": [
+				"solo lo propio"
+			]
+		},
+		{
+			"nombre": "productos",
+			"filas": 8,
+			"columnas": [
+				{
+					"nombre": "id",
+					"tipo": "uuid",
+					"pk": true,
+					"nulo": false
+				},
+				{
+					"nombre": "owner_id",
+					"tipo": "uuid",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "caja_id",
+					"tipo": "uuid",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "nombre",
+					"tipo": "text",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "foto_path",
+					"tipo": "text",
+					"pk": false,
+					"nulo": true
+				},
+				{
+					"nombre": "origen",
+					"tipo": "text",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "valor_usd",
+					"tipo": "numeric(10,2)",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "cantidad",
+					"tipo": "integer",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "stock",
+					"tipo": "integer",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "stock_minimo",
+					"tipo": "integer",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "precio",
+					"tipo": "numeric(10,2)",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "creado_en",
+					"tipo": "timestamp with time zone",
+					"pk": false,
+					"nulo": false
+				}
+			],
+			"indices": [
+				"productos_caja_idx",
+				"productos_id_dueno_unico",
+				"productos_owner_idx",
+				"productos_pkey"
+			],
+			"relaciones": [
+				{
+					"columna": "caja_id",
+					"referencia": "cajas.id"
+				}
+			],
+			"politicas_rls": [
+				"solo lo propio"
+			]
+		},
+		{
+			"nombre": "ventas",
+			"filas": 7,
+			"columnas": [
+				{
+					"nombre": "id",
+					"tipo": "uuid",
+					"pk": true,
+					"nulo": false
+				},
+				{
+					"nombre": "owner_id",
+					"tipo": "uuid",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "clienta_id",
+					"tipo": "uuid",
+					"pk": false,
+					"nulo": true
+				},
+				{
+					"nombre": "descripcion",
+					"tipo": "text",
+					"pk": false,
+					"nulo": true
+				},
+				{
+					"nombre": "canal",
+					"tipo": "text",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "es_fiada",
+					"tipo": "boolean",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "total",
+					"tipo": "numeric(10,2)",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "fecha",
+					"tipo": "timestamp with time zone",
+					"pk": false,
+					"nulo": false
+				}
+			],
+			"indices": [
+				"ventas_clienta_idx",
+				"ventas_id_dueno_unico",
+				"ventas_owner_fiada_idx",
+				"ventas_pkey"
+			],
+			"relaciones": [
+				{
+					"columna": "clienta_id",
+					"referencia": "clientas.id"
+				}
+			],
+			"politicas_rls": [
+				"solo lo propio"
+			]
+		}
+	]
+}
