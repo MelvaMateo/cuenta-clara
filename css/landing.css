@@ -769,3 +769,7 @@ html.revelado-activo .revelar.visible {
 @media (min-width: 1000px) {
   .tarjetas { grid-template-columns: repeat(4, 1fr); }
 }
+
+/* El enlace a la presentación en el pie: el menú de arriba se oculta en el
+   celular, así que en pantallas chicas este es el que la muestra. */
+footer.pie .pie-enlace { color: inherit; font-weight: 600; }
