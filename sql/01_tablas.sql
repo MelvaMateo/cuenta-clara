@@ -135,6 +135,19 @@ create table if not exists public.abonos (
     references public.ventas (id, owner_id) on delete cascade
 );
 
+-- --------------------------------------------------- estado de las cuentas
+-- El rol y el estado de cada cuenta. Solo tiene fila una cuenta con algo
+-- especial: sin fila, es una cuenta común y está activa. Nadie la escribe
+-- directo: la cambian las funciones del portal administrativo
+-- (05_calculos.sql), que primero verifican que quien llama sea administrador.
+create table if not exists public.estado_cuentas (
+  user_id         uuid primary key references auth.users(id) on delete cascade,
+  es_admin        boolean not null default false,
+  activa          boolean not null default true,
+  actualizado_en  timestamptz not null default now(),
+  actualizado_por uuid references auth.users(id) on delete set null
+);
+
 -- ------------------------------------------------------- textos canónicos
 -- Un mismo texto se guarda siempre igual: sin espacios al principio ni al
 -- final y con uno solo entre palabras; vacío queda como null. Así "Karla
