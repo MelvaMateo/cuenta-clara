@@ -5,6 +5,19 @@
       "includeFiles": "js/config.js"
     }
   },
+  "redirects": [
+    {
+      "source": "/app.html",
+      "missing": [
+        {
+          "type": "cookie",
+          "key": "cc_sesion"
+        }
+      ],
+      "destination": "/login.html",
+      "permanent": false
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",

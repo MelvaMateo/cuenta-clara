@@ -131,12 +131,24 @@ window.supabase = { createClient: () => {
 // Las fuentes de vercel.json son del tipo "/(.*)", que ya son expresiones regulares.
 const TIPOS = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml',
                 '.json': 'application/json', '.png': 'image/png', '.ico': 'image/x-icon', '.txt': 'text/plain' };
-const REGLAS = JSON.parse(readFileSync(`${RAIZ}vercel.json`, 'utf8')).headers || [];
+const VERCEL = JSON.parse(readFileSync(`${RAIZ}vercel.json`, 'utf8'));
+const REGLAS = VERCEL.headers || [];
+// Las redirecciones de vercel.json, con su condición de cookie ("missing").
+// Como Vercel, se conserva la consulta (?…).
+const REDIRECCIONES = VERCEL.redirects || [];
+const falta = (cookies, m) => m.type === 'cookie' && !cookies.split(/; */).some(c => c.startsWith(`${m.key}=`));
 const headersPara = ruta => Object.fromEntries(REGLAS
   .filter(r => new RegExp(`^${r.source}$`).test(ruta))
   .flatMap(r => r.headers.map(h => [h.key, h.value])));
 const servidor = createServer((req, res) => {
-  const ruta = decodeURIComponent(new URL(req.url, 'http://x').pathname);
+  const url = new URL(req.url, 'http://x');
+  const redireccion = REDIRECCIONES.find(r => new RegExp(`^${r.source}$`).test(url.pathname)
+    && (r.missing || []).every(m => falta(req.headers.cookie || '', m)));
+  if (redireccion) {
+    res.writeHead(redireccion.permanent ? 308 : 307, { Location: redireccion.destination + url.search }).end();
+    return;
+  }
+  const ruta = decodeURIComponent(url.pathname);
   const archivo = join(RAIZ, ruta === '/' ? 'index.html' : ruta);
   const existe = archivo.startsWith(RAIZ.replace(/[\\/]$/, '')) && existsSync(archivo) && statSync(archivo).isFile();
   const servido = existe ? archivo : join(RAIZ, '404.html');
@@ -172,9 +184,13 @@ const COBERTURA = process.env.COBERTURA;
 // Abre una página del sitio con Supabase simulado. Los errores de JS y los
 // bloqueos del CSP (Chrome los informa en la consola) se juntan en `errores`.
 // `vaciar`: scripts del sitio que se sirven vacíos, para simular que nunca corren.
-const abrir = async (ruta, { vaciar = [] } = {}) => {
-  const page = await browser.newPage();
+// `marca`: si el navegador ya tiene la cookie de sesión (por defecto sí, salvo
+// con ?sinsesion). Cada página va en su propio contexto: no comparten cookies.
+const abrir = async (ruta, { vaciar = [], marca = !ruta.includes('sinsesion') } = {}) => {
+  const contexto = await browser.createBrowserContext();
+  const page = await contexto.newPage();
   paginas.push(page);
+  if (marca) await page.setCookie({ name: 'cc_sesion', value: '1', url: BASE });
   if (COBERTURA) await page.coverage.startJSCoverage({ resetOnNavigation: false, includeRawScriptCoverage: true });
   await page.setBypassServiceWorker(true);
   await page.setRequestInterception(true);
@@ -330,8 +346,24 @@ try {
   const privado = await abrir('/app.html?sinsesion');
   await espera(500);
   ok(privado.page.url().includes('login.html'), `sin sesión, el portal manda al login (${privado.page.url()})`);
-  ok(/<meta name="robots" content="noindex">/.test(await (await fetch(`${BASE}/app.html`)).text()),
+  ok(/<meta name="robots" content="noindex">/.test(await (await fetch(`${BASE}/app.html`, { headers: { cookie: 'cc_sesion=1' } })).text()),
      'el portal pide no aparecer en buscadores');
+
+  // Sin la marca de sesión, el servidor (Vercel) no entrega app.html: redirige al login.
+  const sinMarca = await fetch(`${BASE}/app.html?x=1`, { redirect: 'manual' });
+  ok(sinMarca.status === 307 && sinMarca.headers.get('location') === '/login.html?x=1' && !(await sinMarca.text()).includes('Verificando'),
+     `sin la marca de sesión, /app.html redirige al login sin entregar la página (${sinMarca.status} → ${sinMarca.headers.get('location')})`);
+  const tieneMarca = pagina => pagina.evaluate(() => document.cookie.includes('cc_sesion'));
+  const vencida = await abrir('/app.html?sinsesion', { marca: true });
+  await espera(500);
+  ok(vencida.page.url().includes('login.html') && !(await tieneMarca(vencida.page)),
+     'si quedó la marca pero la sesión venció, la app la borra y manda al login');
+  const entra = await abrir('/login.html', { marca: false });
+  await espera(800);
+  ok(entra.page.url().includes('app.html') && await tieneMarca(entra.page),
+     'con sesión (como al volver de Google), el login marca la sesión y pasa a la app');
+  ok(!(await entra.page.evaluate(async () => { await Sesion.cerrar(); return document.cookie.includes('cc_sesion'); })),
+     'cerrar sesión borra la marca');
 
   const perdida = await abrir('/esta-pagina-no-existe');
   ok(perdida.respuesta.status() === 404 && (await perdida.page.content()).includes('Esta página no existe'),
