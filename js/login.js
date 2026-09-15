@@ -29,8 +29,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  /* Si ya hay sesión (o se vuelve de Google), entra directo. */
+  /* Si ya hay sesión (o se vuelve de Google), entra directo. Al volver de
+     Google todavía no está la marca de sesión, y Vercel manda acá en vez de a
+     la app: se marca y se sigue. */
   if (await Sesion.actual()) {
+    marcarSesion();
     location.replace('app.html');
     return;
   }
@@ -53,6 +56,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       avisar(MENSAJES[error.message] || error.message);
       return;
     }
+    marcarSesion();
     location.href = 'app.html';
   });
 

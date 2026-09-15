@@ -9,6 +9,20 @@ const sb = CONFIG_LISTA
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
 
+/* Marca de sesión: una cookie que avisa que en este navegador hay sesión.
+   Vercel la mira para servir app.html (ver "redirects" en vercel.json): sin
+   ella, manda al login sin entregar la página. No es la sesión ni la valida
+   nadie; la sesión de verdad la valida Supabase, y los datos los protege el
+   RLS de la base. */
+const MARCA_SESION = 'cc_sesion';
+function marcarSesion() {
+  const segura = location.protocol === 'https:' ? '; Secure' : '';
+  document.cookie = `${MARCA_SESION}=1; Path=/; Max-Age=${60 * 60 * 24 * 30}; SameSite=Lax${segura}`;
+}
+function borrarMarca() {
+  document.cookie = `${MARCA_SESION}=; Path=/; Max-Age=0; SameSite=Lax`;
+}
+
 const Sesion = {
   async actual() {
     if (!sb) return null;
@@ -29,6 +43,7 @@ const Sesion = {
   },
 
   async cerrar() {
+    borrarMarca();
     if (sb) await sb.auth.signOut();
   },
 
@@ -61,6 +76,11 @@ const Sesion = {
 /* Solo se entra con sesión abierta; si no, se vuelve a la pantalla de acceso. */
 async function exigirSesion() {
   const sesion = await Sesion.actual();
-  if (!sesion) location.replace('login.html');
+  if (sesion) {
+    marcarSesion();                               // renueva la marca mientras se use
+  } else {
+    borrarMarca();                                // la sesión venció: la marca también
+    location.replace('login.html');
+  }
   return sesion;
 }
