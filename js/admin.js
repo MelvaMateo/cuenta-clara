@@ -83,7 +83,7 @@ function tarjeta(c) {
     soyYo ? '<span class="insignia yo">Vos</span>' : '',
   ].join('');
   return `<article class="tarjeta cuenta${c.activa ? '' : ' apagada'}">
-    <div class="cuenta-cab"><strong>${escHtml(c.correo)}</strong>${insignias}</div>
+    <div class="cuenta-cab"><strong>${escHtml(c.correo)}</strong>${insignias ? `<div class="insignias">${insignias}</div>` : ''}</div>
     <p class="cuenta-sub">Entra con ${formasDeEntrar(c)} · alta ${fecha(c.creada_en)} · último acceso ${fecha(c.ultimo_acceso)}</p>
     <dl class="cuenta-totales">
       <div><dt>Cajas</dt><dd>${c.cajas}</dd></div>
