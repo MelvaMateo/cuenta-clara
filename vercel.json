@@ -16,6 +16,17 @@
       ],
       "destination": "/login.html",
       "permanent": false
+    },
+    {
+      "source": "/admin.html",
+      "missing": [
+        {
+          "type": "cookie",
+          "key": "cc_sesion"
+        }
+      ],
+      "destination": "/login.html",
+      "permanent": false
     }
   ],
   "headers": [
