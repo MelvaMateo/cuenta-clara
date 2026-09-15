@@ -24,6 +24,10 @@ operaciones(firma) as (
          ('public.registrar_fiado(uuid,text,text,numeric)'),
          ('public.registrar_abono(uuid,uuid,numeric)')
 ),
+portal(firma) as (
+  values ('public.es_admin()'), ('public.cuenta_activa()'), ('public.admin_cuentas()'),
+         ('public.admin_cambiar_rol(uuid,boolean)'), ('public.admin_cambiar_estado(uuid,boolean)')
+),
 cruzadas(que, n) as (
   select 'producto → caja', count(*) from public.productos p join public.cajas c on c.id = p.caja_id where c.owner_id <> p.owner_id
   union all
@@ -77,6 +81,13 @@ revisiones(orden, grupo, revision, estado, detalle) as (
     from vistas v
     left join pg_class c on c.relname = v.nombre and c.relnamespace = 'public'::regnamespace and c.relkind = 'v'
   union all
+  select 3, 'Estructura', 'Estado de las cuentas (roles y desactivadas)',
+         case when to_regclass('public.estado_cuentas') is null then 'error'
+              when (select relrowsecurity from pg_class where oid = to_regclass('public.estado_cuentas')) then 'ok'
+              else 'error' end,
+         case when to_regclass('public.estado_cuentas') is null then 'falta la tabla: corré 01 y 04'
+              else 'con RLS' end
+  union all
   select 4, 'Integridad', 'Referencias atadas al mismo dueño',
          case when count(c.conname) = 5 then 'ok' else 'error' end,
          count(c.conname) || ' de 5'
@@ -97,8 +108,9 @@ revisiones(orden, grupo, revision, estado, detalle) as (
     join pg_class c on c.relname = e.nombre and c.relnamespace = 'public'::regnamespace and c.relkind = 'r'
   union all
   select 6, 'Seguridad', 'Política "solo lo propio"',
-         case when count(*) = 6 then 'ok' else 'error' end,
-         count(*) || ' de 6 tablas'
+         case when count(*) = 6 and count(*) filter (where qual like '%cuenta_activa%') = 6 then 'ok' else 'error' end,
+         count(*) || ' de 6 tablas · ' || count(*) filter (where qual like '%cuenta_activa%')
+           || ' cortan los datos de las cuentas desactivadas'
     from pg_policies
    where schemaname = 'public' and policyname = 'solo lo propio'
   union all
@@ -118,6 +130,19 @@ revisiones(orden, grupo, revision, estado, detalle) as (
              where case when to_regprocedure(o.firma) is null then false
                         else has_function_privilege('anon', to_regprocedure(o.firma), 'execute') end))
     from operaciones o
+  union all
+  select 7, 'Seguridad', 'Portal administrativo, solo con sesión',
+         case when bool_or(to_regprocedure(p.firma) is null)
+                or bool_or(case when to_regprocedure(p.firma) is null then false
+                                else has_function_privilege('anon', to_regprocedure(p.firma), 'execute') end)
+              then 'error' else 'ok' end,
+         concat_ws(' · ',
+           count(to_regprocedure(p.firma)) || ' de ' || count(*),
+           'faltan: ' || string_agg(p.firma, ', ') filter (where to_regprocedure(p.firma) is null),
+           'sin sesión se puede usar: ' || string_agg(p.firma, ', ') filter (
+             where case when to_regprocedure(p.firma) is null then false
+                        else has_function_privilege('anon', to_regprocedure(p.firma), 'execute') end))
+    from portal p
   union all
   select 8, 'Seguridad', 'Fotos: cada cuenta lista solo las suyas',
          case when exists (select 1 from pg_policies where schemaname = 'storage' and policyname = 'ver fotos propias')
