@@ -8,9 +8,9 @@
 // v8-to-istanbul y se suman. Los archivos de la app que ninguna prueba
 // ejecuta cuentan igual, con 0 %.
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, relative, sep } from 'node:path';
+import { isAbsolute, join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import v8toIstanbul from 'v8-to-istanbul';
 import libCoverage from 'istanbul-lib-coverage';
@@ -88,6 +88,17 @@ rmSync(join(RAIZ, 'coverage'), { recursive: true, force: true });
 const contexto = libReport.createContext({ dir: join(RAIZ, 'coverage'), coverageMap: mapa, defaultSummarizer: 'flat' });
 for (const reporte of ['json-summary', 'lcovonly', 'text']) reports.create(reporte).execute(contexto);
 rmSync(temporal, { recursive: true, force: true });
+
+// Istanbul escribe las rutas con el separador del sistema: en Windows salen
+// "js\app.js". SonarCloud, que corre en Linux, y cualquier otra máquina
+// esperan "js/app.js", relativa a la raíz del repo.
+const portable = ruta => (isAbsolute(ruta) ? relative(RAIZ, ruta) : ruta).split('\\').join('/');
+const lcov = join(RAIZ, 'coverage', 'lcov.info');
+writeFileSync(lcov, readFileSync(lcov, 'utf8').replace(/^SF:(.*)$/gm, (_, ruta) => `SF:${portable(ruta)}`));
+const resumen = join(RAIZ, 'coverage', 'coverage-summary.json');
+const porArchivo = JSON.parse(readFileSync(resumen, 'utf8'));
+writeFileSync(resumen, JSON.stringify(Object.fromEntries(
+  Object.entries(porArchivo).map(([ruta, datos]) => [ruta === 'total' ? ruta : portable(ruta), datos]))));
 
 const pct = mapa.getCoverageSummary().lines.pct;
 console.log(`\n${pct >= MINIMO ? '✓' : '✗'} Cobertura de líneas: ${pct} % (mínimo ${MINIMO} %)`);
