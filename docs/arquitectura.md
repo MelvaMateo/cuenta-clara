@@ -55,7 +55,7 @@ C4Container
 
 | Contenedor | Tecnología | Responsabilidad |
 |---|---|---|
-| **PWA** | HTML, CSS y JavaScript sin compilación; service worker | Toda la pantalla: formularios, listas e indicadores. Genera la clave de cada operación. No calcula costos ni decide permisos. Funciona sin internet para consultar la última copia |
+| **PWA** | HTML, CSS y JavaScript sin compilación; service worker | Toda la pantalla: la app de cada negocio y el portal administrativo (`admin.html`), con formularios, listas e indicadores. Genera la clave de cada operación. No calcula costos ni decide permisos. Funciona sin internet para consultar la última copia |
 | **Healthcheck** | Función de Vercel | Dice si el sitio y Supabase responden: 200 `ok` o 503 `degraded`. No toca datos |
 | **Supabase Auth** | GoTrue | Emite, valida y renueva la sesión (JWT); login con correo o Google |
 | **Base de datos** | PostgreSQL | Datos, integridad, permisos (RLS), el cálculo del costo real (vistas) y las operaciones de varias filas (funciones idempotentes) |
@@ -115,3 +115,4 @@ sequenceDiagram
 |---|---|---|
 | [ADR-1](adr/0001-supabase-como-backend-con-rls.md) | Supabase como backend, con la seguridad de los datos en RLS | Aceptada |
 | [ADR-2](adr/0002-escrituras-idempotentes-con-clave.md) | Escrituras idempotentes con una clave generada por la app | Aceptada |
+| [ADR-3](adr/0003-portal-administrativo-con-funciones-de-la-base.md) | Portal administrativo con funciones de la base, sin la clave de servicio | Aceptada |
