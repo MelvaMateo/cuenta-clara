@@ -50,8 +50,10 @@ const Sesion = {
         headers: { apikey: SUPABASE_ANON_KEY },
       });
       return (await r.json()).external || {};
-    } catch (e) {
-      return {};                                  // sin red: solo correo
+    } catch {
+      // Sin red, o Supabase no respondió: se muestra solo el acceso por correo,
+      // que funciona igual. No es un error que la usuaria tenga que ver.
+      return {};
     }
   },
 };
