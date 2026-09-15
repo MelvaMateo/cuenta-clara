@@ -161,12 +161,18 @@ const browser = await puppeteer.launch({
 });
 const errores = [];
 const respuestas = [];
+const paginas = [];
+// Con COBERTURA (la ruta de un archivo), mide qué partes del JavaScript del
+// sitio se ejecutan y las guarda ahí. Lo usa tests/cobertura.mjs.
+const COBERTURA = process.env.COBERTURA;
 
 // Abre una página del sitio con Supabase simulado. Los errores de JS y los
 // bloqueos del CSP (Chrome los informa en la consola) se juntan en `errores`.
 // `vaciar`: scripts del sitio que se sirven vacíos, para simular que nunca corren.
 const abrir = async (ruta, { vaciar = [] } = {}) => {
   const page = await browser.newPage();
+  paginas.push(page);
+  if (COBERTURA) await page.coverage.startJSCoverage({ resetOnNavigation: false, includeRawScriptCoverage: true });
   await page.setBypassServiceWorker(true);
   await page.setRequestInterception(true);
   page.on('request', r => {
@@ -330,6 +336,17 @@ try {
   fallas++;
   console.error('✗ FALLÓ:', e.message);
 } finally {
+  if (COBERTURA) {
+    const entradas = [];
+    for (const p of paginas) {
+      for (const e of await p.coverage.stopJSCoverage()) {
+        if (e.url.startsWith(BASE) && e.url.endsWith('.js') && e.rawScriptCoverage) {
+          entradas.push({ url: e.url, texto: e.text, funciones: e.rawScriptCoverage.functions });
+        }
+      }
+    }
+    writeFileSync(COBERTURA, JSON.stringify(entradas));
+  }
   await browser.close();
   servidor.close();
   rmSync(temporal, { recursive: true, force: true });
