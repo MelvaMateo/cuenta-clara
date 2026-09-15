@@ -24,8 +24,10 @@ jobs:
           node-version: 22
           cache: npm
 
-      # npm ci instala exactamente lo que dice package-lock.json.
-      - run: npm ci
+      # npm ci instala exactamente lo que dice package-lock.json. --ignore-scripts:
+      # ninguna dependencia necesita correr scripts al instalarse, y así no puede
+      # correr código de terceros en el CI.
+      - run: npm ci --ignore-scripts
 
       - name: Sintaxis de los scripts del sitio
         run: npm run test:sintaxis
