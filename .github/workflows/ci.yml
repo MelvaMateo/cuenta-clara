@@ -32,6 +32,9 @@ jobs:
       - name: Sintaxis de los scripts del sitio
         run: npm run test:sintaxis
 
+      - name: Lógica de la app (node:test)
+        run: npm run test:logica
+
       - name: Healthcheck de la API
         run: npm run test:health
 
