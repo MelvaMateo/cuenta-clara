@@ -337,5 +337,113 @@ end $$;
 revoke all on function public.registrar_abono(uuid, uuid, numeric) from public, anon;
 grant execute on function public.registrar_abono(uuid, uuid, numeric) to authenticated;
 
+-- ------------------------------------------------- portal administrativo
+-- Estas funciones corren con los permisos de su dueño (security definer):
+-- leen las cuentas de auth.users y cuentan filas de todas las cuentas, algo
+-- que el RLS no le deja hacer a nadie. Por eso lo primero que hacen es
+-- verificar que quien llama sea administrador. No devuelven datos de ningún
+-- negocio, solo totales por cuenta; y los cambios mandan el valor final, así
+-- repetirlos deja lo mismo.
+
+create or replace function public.admin_cuentas()
+returns table (
+  user_id uuid, correo text, proveedor text, creada_en timestamptz, ultimo_acceso timestamptz,
+  es_admin boolean, activa boolean, cajas bigint, productos bigint, ventas bigint, por_cobrar numeric
+)
+language plpgsql
+stable
+security definer
+set search_path = public
+as $$
+#variable_conflict use_column
+begin
+  if not public.es_admin() then
+    raise exception 'Solo para administradores';
+  end if;
+  return query
+  select u.id, u.email::text, coalesce(u.raw_app_meta_data ->> 'provider', 'email'),
+         u.created_at, u.last_sign_in_at,
+         coalesce(e.es_admin, false), coalesce(e.activa, true),
+         (select count(*) from public.cajas c where c.owner_id = u.id),
+         (select count(*) from public.productos p where p.owner_id = u.id),
+         (select count(*) from public.ventas v where v.owner_id = u.id),
+         coalesce((select sum(v.total) from public.ventas v where v.owner_id = u.id and v.es_fiada), 0)
+           - coalesce((select sum(a.monto) from public.abonos a where a.owner_id = u.id), 0)
+    from auth.users u
+    left join public.estado_cuentas e on e.user_id = u.id
+   order by u.created_at, u.id;
+end $$;
+
+-- Da o quita el rol de administrador. Nadie se quita su propio rol (siempre
+-- queda al menos un administrador), y una cuenta desactivada no puede serlo.
+create or replace function public.admin_cambiar_rol(p_usuario uuid, p_admin boolean)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.es_admin() then
+    raise exception 'Solo para administradores';
+  end if;
+  if p_admin is null then
+    raise exception 'Falta indicar el rol';
+  end if;
+  if not exists (select 1 from auth.users where id = p_usuario) then
+    raise exception 'No existe esa cuenta';
+  end if;
+  if p_usuario = auth.uid() and not p_admin then
+    raise exception 'No podés quitarte tu propio rol de administrador: pedíselo a otro administrador';
+  end if;
+  if p_admin and exists (select 1 from public.estado_cuentas where user_id = p_usuario and not activa) then
+    raise exception 'La cuenta está desactivada: primero reactivala';
+  end if;
+  insert into public.estado_cuentas (user_id, es_admin, actualizado_por)
+       values (p_usuario, p_admin, auth.uid())
+  on conflict (user_id) do update
+     set es_admin = excluded.es_admin, actualizado_en = now(), actualizado_por = excluded.actualizado_por
+   where public.estado_cuentas.es_admin is distinct from excluded.es_admin;
+end $$;
+
+-- Desactiva o reactiva una cuenta: desactivada, el RLS deja de entregarle sus
+-- datos (04_seguridad.sql). Nadie desactiva su propia cuenta, y a un
+-- administrador primero hay que quitarle el rol.
+create or replace function public.admin_cambiar_estado(p_usuario uuid, p_activa boolean)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not public.es_admin() then
+    raise exception 'Solo para administradores';
+  end if;
+  if p_activa is null then
+    raise exception 'Falta indicar el estado';
+  end if;
+  if not exists (select 1 from auth.users where id = p_usuario) then
+    raise exception 'No existe esa cuenta';
+  end if;
+  if p_usuario = auth.uid() and not p_activa then
+    raise exception 'No podés desactivar tu propia cuenta';
+  end if;
+  if not p_activa and exists (select 1 from public.estado_cuentas where user_id = p_usuario and es_admin) then
+    raise exception 'Es administrador: primero quitale el rol';
+  end if;
+  insert into public.estado_cuentas (user_id, activa, actualizado_por)
+       values (p_usuario, p_activa, auth.uid())
+  on conflict (user_id) do update
+     set activa = excluded.activa, actualizado_en = now(), actualizado_por = excluded.actualizado_por
+   where public.estado_cuentas.activa is distinct from excluded.activa;
+end $$;
+
+-- Solo con la sesión iniciada; cada función verifica además que sea administrador.
+revoke all on function public.admin_cuentas() from public, anon;
+grant execute on function public.admin_cuentas() to authenticated;
+revoke all on function public.admin_cambiar_rol(uuid, boolean) from public, anon;
+grant execute on function public.admin_cambiar_rol(uuid, boolean) to authenticated;
+revoke all on function public.admin_cambiar_estado(uuid, boolean) from public, anon;
+grant execute on function public.admin_cambiar_estado(uuid, boolean) to authenticated;
+
 -- La API de Supabase vuelve a leer la estructura.
 notify pgrst, 'reload schema';
