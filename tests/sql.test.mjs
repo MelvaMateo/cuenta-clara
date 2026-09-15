@@ -31,11 +31,14 @@ const TABLAS = ['cajas', 'productos', 'clientas', 'ventas', 'detalle_venta', 'ab
 // roles y el esquema de Storage.
 const SUPABASE = `
   create schema if not exists auth;
-  create table auth.users (id uuid primary key default gen_random_uuid(), email text);
+  create table auth.users (id uuid primary key default gen_random_uuid(), email text,
+    created_at timestamptz not null default now(), last_sign_in_at timestamptz,
+    raw_app_meta_data jsonb not null default '{}');
   create function auth.uid() returns uuid language sql stable
     as $$ select nullif(current_setting('prueba.uid', true), '')::uuid $$;
   do $$ begin create role authenticated; exception when duplicate_object then null; end $$;
   do $$ begin create role anon;          exception when duplicate_object then null; end $$;
+  grant usage on schema auth to authenticated, anon;
   create schema if not exists storage;
   create table storage.buckets (id text primary key, name text, public boolean);
   create table storage.objects (id uuid default gen_random_uuid(), bucket_id text, name text);
@@ -306,7 +309,8 @@ console.log('\n━━━ E) La revisión sobre una base de la versión anterior 
   try { ({ r } = await informe(db)); } catch (e) { ok(false, `el 08 falla sobre la base vieja: ${e.message}`); }
   if (r) {
     const malos = r.filter(x => x.estado === '❌').map(x => x.revision).sort().join(' | ');
-    ok(malos === 'Operaciones con clave, solo con sesión | Textos en forma canónica',
+    ok(malos === 'Estado de las cuentas (roles y desactivadas) | Operaciones con clave, solo con sesión | '
+       + 'Política "solo lo propio" | Portal administrativo, solo con sesión | Textos en forma canónica',
        `el 08 corre y marca lo que falta: ${malos}`);
   }
 }
@@ -328,22 +332,119 @@ console.log('\n━━━ F) Exportar el modelo de datos (09) ━━━');
      && exp.tablas.every(t => JSON.stringify(Object.keys(t)) === '["nombre","filas","columnas","indices","relaciones","politicas_rls"]')
      && exp.tablas.every(t => t.columnas.every(c => JSON.stringify(Object.keys(c)) === '["nombre","tipo","pk","nulo"]')),
      'las claves son exactamente las del formato pedido');
-  ok(JSON.stringify(exp.tablas.map(t => t.nombre)) === JSON.stringify([...TABLAS].sort()),
-     `exporta las 6 tablas: ${exp.tablas.map(t => t.nombre).join(', ')}`);
-  ok(exp.tablas.every(t => t.columnas.some(c => c.nombre === 'id' && c.pk && !c.nulo && c.tipo === 'uuid')),
-     'todas tienen llave primaria (id uuid)');
+  const NOMBRES = [...TABLAS, 'estado_cuentas'].sort();
+  ok(JSON.stringify(exp.tablas.map(t => t.nombre)) === JSON.stringify(NOMBRES),
+     `exporta las ${NOMBRES.length} tablas: ${exp.tablas.map(t => t.nombre).join(', ')}`);
+  ok(exp.tablas.every(t => t.columnas.some(c => c.pk && !c.nulo)),
+     'todas tienen llave primaria');
   const relaciones = exp.tablas.flatMap(t => t.relaciones);
   ok(relaciones.length === 5 && relaciones.every(r => TABLAS.includes(r.referencia.split('.')[0])),
      `5 relaciones entre tablas: ${relaciones.map(r => r.columna + '→' + r.referencia).join(', ')}`);
-  ok(exp.tablas.every(t => t.indices.length > 0 && t.politicas_rls.includes('solo lo propio')),
-     'cada tabla con índices y la política "solo lo propio"');
+  ok(exp.tablas.every(t => t.indices.length > 0 && t.politicas_rls.length > 0)
+     && exp.tablas.filter(t => TABLAS.includes(t.nombre)).every(t => t.politicas_rls.includes('solo lo propio')),
+     'cada tabla con índices y políticas RLS ("solo lo propio" en las del negocio)');
   const conteo = {};
-  for (const t of TABLAS) conteo[t] = (await filas(db, `select count(*)::int n from public.${t}`))[0].n;
+  for (const t of NOMBRES) conteo[t] = (await filas(db, `select count(*)::int n from public.${t}`))[0].n;
   ok(exp.tablas.every(t => t.filas === conteo[t.nombre]),
      `las filas coinciden con la base: ${exp.tablas.map(t => `${t.nombre} ${t.filas}`).join(', ')}`);
   const otra = await exportar();
   ok(JSON.stringify({ ...otra, generado_at: '' }) === JSON.stringify({ ...exp, generado_at: '' }),
      'correrlo otra vez da lo mismo (solo cambia la fecha)');
+}
+
+// ======================================================================= G
+console.log('\n━━━ G) Portal administrativo ━━━');
+{
+  const db = await nueva();
+  await todo(db);
+  const uno = async sql => (await filas(db, sql))[0];
+  const falla = async (sql, patron, msg) => {
+    try { await db.query(sql); ok(false, msg + ' (no falló)'); }
+    catch (e) { ok(patron.test(e.message), `${msg}: ${e.message}`); }
+  };
+  const como = id => db.exec(`select set_config('prueba.uid', '${id}', false)`);
+  // Cuántas cajas ve una cuenta con sus propios permisos (rol authenticated, con RLS).
+  const cajasQueVe = async id => {
+    await como(id);
+    await db.exec('set role authenticated');
+    const n = (await uno('select count(*)::int n from public.cajas')).n;
+    await db.exec('reset role');
+    return n;
+  };
+  const { id: duena } = await uno(`select id from auth.users where email = 'odany_m@unitec.edu'`);
+  await db.exec(`insert into auth.users (email, raw_app_meta_data) values
+    ('admin@ejemplo.com', '{"provider":"google"}'), ('otra@ejemplo.com', '{"provider":"email"}')`);
+  const { id: admin } = await uno(`select id from auth.users where email = 'admin@ejemplo.com'`);
+  const { id: otra } = await uno(`select id from auth.users where email = 'otra@ejemplo.com'`);
+
+  await como(duena);
+  ok((await uno('select public.es_admin() as a')).a === false, 'una cuenta común no es administradora');
+  await falla('select * from public.admin_cuentas()', /Solo para administradores/, 'una cuenta común no puede ver las cuentas');
+
+  // El primer administrador lo nombra el script 10 (con el correo cambiado, como en el SQL Editor).
+  const primero = leer('10_primer_administrador.sql').replace("'tu-correo@ejemplo.com'", "'admin@ejemplo.com', 'nadie@ejemplo.com'");
+  await correr(db, '10', primero);
+  await correr(db, '10 (2ª vez)', primero);
+  ok((await uno('select count(*)::int n from public.estado_cuentas where es_admin')).n === 1,
+     '10 nombra al primer administrador, salta la cuenta que no existe, y correrlo otra vez deja lo mismo');
+
+  await como(admin);
+  ok((await uno('select public.es_admin() as a')).a === true, 'el administrador es administrador');
+  const lista = await filas(db, 'select * from public.admin_cuentas()');
+  const deLaDuena = lista.find(c => c.user_id === duena) || {};
+  ok(lista.length === 3 && Number(deLaDuena.cajas) === 1 && Number(deLaDuena.productos) === 8
+     && Number(deLaDuena.ventas) === 7 && Number(deLaDuena.por_cobrar) === 1600,
+     `ve todas las cuentas con sus totales (${lista.length} cuentas; la de muestra: ${[deLaDuena.cajas, deLaDuena.productos, deLaDuena.ventas, deLaDuena.por_cobrar].join(' / ')})`);
+
+  // Roles
+  await db.exec(`select public.admin_cambiar_rol('${otra}', true)`);
+  await db.exec(`select public.admin_cambiar_rol('${otra}', true)`);
+  await como(otra);
+  ok((await uno('select public.es_admin() as a')).a === true, 'un administrador le da el rol a otra cuenta (dos veces, mismo resultado)');
+  await falla(`select public.admin_cambiar_rol('${otra}', false)`, /propio rol/, 'nadie se quita su propio rol');
+  await como(admin);
+  await db.exec(`select public.admin_cambiar_rol('${otra}', false)`);
+  await como(otra);
+  ok((await uno('select public.es_admin() as a')).a === false, 'otro administrador se lo puede quitar');
+
+  // Cuentas desactivadas: el RLS deja de entregarles sus datos.
+  await como(admin);
+  await falla(`select public.admin_cambiar_estado('${admin}', false)`, /propia cuenta/, 'nadie desactiva su propia cuenta');
+  await db.exec(`select public.admin_cambiar_rol('${otra}', true)`);
+  await falla(`select public.admin_cambiar_estado('${otra}', false)`, /quitale el rol/, 'a un administrador primero hay que quitarle el rol');
+  await db.exec(`select public.admin_cambiar_rol('${otra}', false)`);
+  const antes = await cajasQueVe(duena);
+  await como(admin);
+  await db.exec(`select public.admin_cambiar_estado('${duena}', false)`);
+  const marca = async () => String((await uno(`select actualizado_en from public.estado_cuentas where user_id = '${duena}'`)).actualizado_en);
+  const primera = await marca();
+  await db.exec(`select public.admin_cambiar_estado('${duena}', false)`);
+  const segunda = await marca();
+  const durante = await cajasQueVe(duena);
+  const activa = (await uno('select public.cuenta_activa() as a')).a;
+  await como(admin);
+  await db.exec(`select public.admin_cambiar_estado('${duena}', true)`);
+  const despues = await cajasQueVe(duena);
+  ok(antes === 1 && durante === 0 && despues === 1 && activa === false,
+     `desactivar una cuenta le corta sus datos por RLS, y reactivarla se los devuelve (cajas que ve: ${antes} → ${durante} → ${despues})`);
+  ok(primera === segunda, 'desactivar dos veces no cambia nada la segunda vez');
+
+  // Permisos
+  const { puede } = await uno(`select bool_or(has_function_privilege('anon', f, 'execute')) as puede from unnest(array[
+    'public.es_admin()', 'public.cuenta_activa()', 'public.admin_cuentas()',
+    'public.admin_cambiar_rol(uuid,boolean)', 'public.admin_cambiar_estado(uuid,boolean)']) f`);
+  ok(!puede, 'sin sesión no se puede usar ninguna función del portal');
+  await como(admin);
+  await db.exec('set role authenticated');
+  let escribio = true;
+  try { await db.exec(`insert into public.estado_cuentas (user_id, es_admin) values ('${otra}', true)`); }
+  catch { escribio = false; }
+  await db.exec('reset role');
+  ok(!escribio, 'nadie escribe estado_cuentas directo, ni un administrador: solo las funciones del portal');
+  await db.exec(`select set_config('prueba.uid', '', false)`);
+
+  const { malos } = await informe(db);
+  ok(malos.length === 0, `08: ${malos.length} revisiones con ❌`);
 }
 
 console.log(fallas ? `\n✗ ${fallas} pruebas fallaron` : '\n✓ todas las pruebas pasaron');
