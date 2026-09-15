@@ -1,6 +1,6 @@
 # Cuenta Clara
 
-[![CI](https://github.com/MelvaMateo/cuenta-clara/actions/workflows/ci.yml/badge.svg)](https://github.com/MelvaMateo/cuenta-clara/actions/workflows/ci.yml)
+[![CI](https://github.com/MelvaMateo/cuenta-clara/actions/workflows/ci.yml/badge.svg)](https://github.com/MelvaMateo/cuenta-clara/actions/workflows/ci.yml) [![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=MelvaMateo_cuenta-clara&metric=alert_status)](https://sonarcloud.io/summary/overall?id=MelvaMateo_cuenta-clara)
 
 App web (PWA) para emprendedores que traen cajas desde USA y revenden: saber si cada caja les deja ganancia, a cuánto vender cada producto, quién les debe y qué se está por agotar.
 
@@ -82,6 +82,9 @@ npm test    # corre las cuatro, en este orden
 | `npm run test:health` | El healthcheck, sin red: 200 si Supabase responde, 503 si no, siempre en JSON |
 | `npm run test:sql` | Los scripts de `sql/` en un Postgres real (PGlite): que se puedan repetir, que actualicen una base con la historia real sin cambiar ningún número, los textos canónicos y las operaciones con clave |
 | `npm run test:ui` | La app en Chrome, con Supabase simulado: que un reintento después de un corte no repita la operación, los números escritos a mano y el orden de las listas. Si Chrome no está en su lugar habitual, poné la ruta en la variable `NAVEGADOR` |
+| `npm run cobertura` | Corre la prueba de interfaz y la del healthcheck midiendo qué líneas ejecutan, y escribe `coverage/coverage-summary.json` y `coverage/lcov.info` (formato Istanbul). Falla si baja de 60 % |
+
+**Calidad de código.** La cobertura de líneas es de **78.66 %**: el JavaScript del sitio se mide en Chrome durante la prueba de interfaz, y el healthcheck en Node. Los archivos que ninguna prueba ejecuta, como el service worker, cuentan igual, con 0 %. SonarCloud analiza el código en cada push a `main` ([resultados](https://sonarcloud.io/summary/overall?id=MelvaMateo_cuenta-clara)); `.sonarcloud.properties` dice qué analiza y por qué `sql/` queda afuera.
 
 **CI (integración continua).** GitHub Actions corre esas cuatro pruebas en cada push y en cada pull request ([.github/workflows/ci.yml](.github/workflows/ci.yml)). Si alguna falla, el commit o el PR queda con una ❌ en GitHub; la insignia de arriba muestra cómo quedó el último.
 
@@ -108,6 +111,8 @@ Solo llega a producción lo que pasó el CI:
 | `sql/` | Scripts de la base, numerados e idempotentes: tablas, migraciones, índices, seguridad, cálculos, fotos, muestra y revisión (ver `sql/README.md`) |
 | `tests/`, `package.json` | Las pruebas y sus herramientas; el sitio no las necesita (ver "Pruebas y CI/CD") |
 | `.github/workflows/ci.yml` | El pipeline de CI en GitHub Actions |
+| `coverage/` | El reporte de cobertura (Istanbul): `coverage-summary.json` y `lcov.info` |
+| `.sonarcloud.properties` | Qué analiza SonarCloud y qué deja afuera |
 | `manifest.json`, `sw.js`, `icon.svg` | Soporte PWA (instalable, offline) |
 | `img/`, `favicon.ico`, `apple-touch-icon.png` | Íconos para instalar la app y la tarjeta para compartir; se generan con `scripts/generar-imagenes.mjs` |
 | `404.html`, `robots.txt` | La página de "no existe" y las reglas para buscadores |
