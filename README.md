@@ -73,12 +73,13 @@ Las pruebas no forman parte del sitio: el sitio es estático y se publica sin in
 
 ```bash
 npm ci      # instala las herramientas de prueba
-npm test    # corre las cuatro, en este orden
+npm test    # corre las cinco, en este orden
 ```
 
 | Comando | Qué prueba |
 |---|---|
 | `npm run test:sintaxis` | Que cada script de `js/` y el service worker se puedan leer |
+| `npm run test:logica` | Pruebas unitarias con el test runner de Node (`node:test`), en `tests/logica.test.mjs`: cómo se leen los números escritos a mano, las validaciones, el escape de HTML y las claves de idempotencia |
 | `npm run test:health` | El healthcheck, sin red: 200 si Supabase responde, 503 si no, siempre en JSON |
 | `npm run test:sql` | Los scripts de `sql/` en un Postgres real (PGlite): que se puedan repetir, que actualicen una base con la historia real sin cambiar ningún número, los textos canónicos y las operaciones con clave |
 | `npm run test:ui` | La app en Chrome, con Supabase simulado: que un reintento después de un corte no repita la operación, los números escritos a mano y el orden de las listas. Si Chrome no está en su lugar habitual, poné la ruta en la variable `NAVEGADOR` |
@@ -86,7 +87,7 @@ npm test    # corre las cuatro, en este orden
 
 **Calidad de código.** La cobertura de líneas es de **78.66 %**: el JavaScript del sitio se mide en Chrome durante la prueba de interfaz, y el healthcheck en Node. Los archivos que ninguna prueba ejecuta, como el service worker, cuentan igual, con 0 %. SonarCloud analiza el código en cada push a `main` ([resultados](https://sonarcloud.io/summary/overall?id=MelvaMateo_cuenta-clara)); `.sonarcloud.properties` dice qué analiza y por qué `sql/` queda afuera.
 
-**CI (integración continua).** GitHub Actions corre esas cuatro pruebas en cada push y en cada pull request ([.github/workflows/ci.yml](.github/workflows/ci.yml)). Si alguna falla, el commit o el PR queda con una ❌ en GitHub; la insignia de arriba muestra cómo quedó el último.
+**CI (integración continua).** GitHub Actions corre esas cinco pruebas en cada push y en cada pull request ([.github/workflows/ci.yml](.github/workflows/ci.yml)). Si alguna falla, el commit o el PR queda con una ❌ en GitHub; la insignia de arriba muestra cómo quedó el último.
 
 **CD.** Vercel está conectado al repo: cada push a `main` se publica solo en https://www.melvamateo.site, y cada rama o PR recibe una URL de vista previa. Eso es *despliegue* continuo (lo nuevo llega a producción sin que nadie apriete un botón), que va un paso más allá de la *entrega* continua (lo nuevo queda listo para publicar, pero alguien decide cuándo).
 
