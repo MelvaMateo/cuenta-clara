@@ -1,5 +1,5 @@
 {
-	"generado_at": "2026-09-15T13:58:08Z",
+	"generado_at": "2026-09-15T16:47:06Z",
 	"motor": "postgres",
 	"tablas": [
 		{
@@ -268,6 +268,49 @@
 			],
 			"politicas_rls": [
 				"solo lo propio"
+			]
+		},
+		{
+			"nombre": "estado_cuentas",
+			"filas": 2,
+			"columnas": [
+				{
+					"nombre": "user_id",
+					"tipo": "uuid",
+					"pk": true,
+					"nulo": false
+				},
+				{
+					"nombre": "es_admin",
+					"tipo": "boolean",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "activa",
+					"tipo": "boolean",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "actualizado_en",
+					"tipo": "timestamp with time zone",
+					"pk": false,
+					"nulo": false
+				},
+				{
+					"nombre": "actualizado_por",
+					"tipo": "uuid",
+					"pk": false,
+					"nulo": true
+				}
+			],
+			"indices": [
+				"estado_cuentas_pkey"
+			],
+			"relaciones": [],
+			"politicas_rls": [
+				"la propia, o todas si es admin"
 			]
 		},
 		{
