@@ -25,9 +25,9 @@ const entero = n => String(Math.round(n));
    miles; con solo coma, separa miles si le siguen grupos de tres cifras y, si
    no, es el decimal. Lo que no se entiende da NaN y la operación no sigue. */
 function leerNumero(texto) {
-  let s = String(texto ?? '').trim().replace(/^(L|\$)\s*/i, '').replace(/\s/g, '');
-  if (s.includes('.') && s.includes(',')) s = s.replace(/,/g, '');
-  else if (/^\d{1,3}(,\d{3})+$/.test(s)) s = s.replace(/,/g, '');
+  let s = String(texto ?? '').trim().replace(/^[L$]\s*/i, '').replaceAll(/\s/g, '');
+  if (s.includes('.') && s.includes(',')) s = s.replaceAll(',', '');
+  else if (/^\d{1,3}(,\d{3})+$/.test(s)) s = s.replaceAll(',', '');
   else s = s.replace(',', '.');
   return /^\d+(\.\d+)?$/.test(s) ? Number(s) : Number.NaN;
 }
