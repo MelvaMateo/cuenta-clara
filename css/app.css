@@ -665,7 +665,7 @@ main { max-width: 560px; margin: 0 auto; padding: 0 16px 20px; }
   letter-spacing: -.03em;
   font-variant-numeric: tabular-nums;
 }
-.stat label { font-size: .78rem; color: var(--suave); font-weight: 600; }
+.stat-lbl { font-size: .78rem; color: var(--suave); font-weight: 600; }
 .stat-cobrar {
   background: linear-gradient(135deg, var(--magenta), var(--morado));
   border-color: transparent;
