@@ -417,6 +417,17 @@ try {
   const adminSinMarca = await fetch(`${BASE}/admin.html`, { redirect: 'manual' });
   ok(adminSinMarca.status === 307, `sin la marca de sesión, /admin.html también redirige al login (${adminSinMarca.status})`);
 
+  // ------------------------------------------------ enlaces a una pestaña
+  const directo = await abrir('/app.html#inventario');
+  await espera(600);
+  ok(await directo.page.$eval('#inventario', el => el.classList.contains('active')), 'app.html#inventario abre directo la pestaña Stock');
+  await directo.page.$eval('button[data-tab="fiados"]', b => b.click());
+  await espera(300);
+  ok(directo.page.url().endsWith('#fiados'), `tocar una pestaña deja la dirección en esa pestaña (${directo.page.url().split('/').pop()})`);
+  await directo.page.evaluate(() => { location.hash = 'resumen'; });
+  await espera(400);
+  ok(await directo.page.$eval('#resumen', el => el.classList.contains('active')), 'cambiar la dirección a #resumen cambia de pestaña sin recargar');
+
   const perdida = await abrir('/esta-pagina-no-existe');
   ok(perdida.respuesta.status() === 404 && (await perdida.page.content()).includes('Esta página no existe'),
      'una dirección que no existe da 404 con la página propia');

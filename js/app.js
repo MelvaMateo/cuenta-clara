@@ -141,6 +141,8 @@ function showTab(id) {
   });
   document.getElementById(id).classList.add('active');
   if (id === 'resumen') renderResumen();
+  // La dirección muestra la pestaña (app.html#inventario): se puede compartir o recargar.
+  if (location.hash !== `#${id}`) history.replaceState(null, '', `#${id}`);
   window.scrollTo({ top: 0, behavior: 'auto' });
 }
 
@@ -802,6 +804,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (cajas.length === 0) alternarPanel('panelCaja', true);
     if (cajas.length > 0 && productos.length === 0) alternarPanel('panelProducto', true);
   }
+
+  /* Enlaces directos a una pestaña: app.html#inventario abre Stock. Sirven
+     para el recorrido guiado, para compartir una pestaña y para volver a la
+     misma al recargar; si la dirección cambia sin recargar, cambia la pestaña. */
+  const abrirPestanaDeLaUrl = () => {
+    const id = location.hash.slice(1);
+    if (id && document.getElementById(id)?.classList.contains('tab')) showTab(id);
+  };
+  abrirPestanaDeLaUrl();
+  window.addEventListener('hashchange', abrirPestanaDeLaUrl);
 });
 
 /* PWA: registra el service worker solo cuando se sirve por http(s) */
