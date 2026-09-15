@@ -15,3 +15,6 @@ tests/
 
 # Herramientas que se corren a mano, como el generador de imágenes.
 scripts/
+
+# La documentación de arquitectura vive en el repo, no en el sitio.
+docs/

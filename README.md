@@ -25,7 +25,7 @@ Lo comprado en tiendas conserva su costo exacto; lo que llega en lotes surtidos 
 
 - **PWA (este repo):** HTML, CSS y JavaScript sin compilación ni dependencias que instalar.
 - **Backend:** Supabase — **Auth** para el acceso y **PostgreSQL** para el inventario, las clientas, las ventas y los fiados. Ya no queda nada en `localStorage`.
-- **Producción:** Vercel, en https://www.melvamateo.site (ver "Publicación"). La arquitectura está en [PLAN.md](PLAN.md).
+- **Producción:** Vercel, en https://www.melvamateo.site (ver "Publicación"). La arquitectura está en [docs/arquitectura.md](docs/arquitectura.md), con los diagramas C4 y las decisiones (ADRs); el plan inicial, en [PLAN.md](PLAN.md).
 
 ## Configuración
 
@@ -114,3 +114,5 @@ Solo llega a producción lo que pasó el CI:
 | `vercel.json` | Headers de seguridad y la configuración del healthcheck |
 | `api/health.js` | El healthcheck: `GET /api/health` |
 | `PLAN.md` | Plan y diseño completo: problema, backlog, arquitectura, calidad, despliegue y validación |
+| `docs/arquitectura.md` | Arquitectura actual: diagramas C4 (contexto y contenedores), despliegue y atributos de calidad |
+| `docs/adr/` | Decisiones de arquitectura (ADRs), con contexto, decisión y consecuencias |
