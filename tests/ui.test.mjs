@@ -179,7 +179,10 @@ const abrir = async (ruta, { vaciar = [] } = {}) => {
   await page.setBypassServiceWorker(true);
   await page.setRequestInterception(true);
   page.on('request', r => {
-    if (r.url().includes('supabase-js')) return r.respond({ status: 200, contentType: 'application/javascript', body: SIMULADO });
+    // Con CORS, como jsDelivr: las páginas lo cargan con crossorigin="anonymous".
+    if (r.url().includes('supabase-js')) {
+      return r.respond({ status: 200, contentType: 'application/javascript', headers: { 'Access-Control-Allow-Origin': '*' }, body: SIMULADO });
+    }
     if (vaciar.some(v => r.url().includes(v))) return r.respond({ status: 200, contentType: 'application/javascript', body: '' });
     return r.continue();
   });
