@@ -508,10 +508,10 @@ function renderProductos(animar = false) {
   const q = (document.getElementById('buscarProd').value || '').toLowerCase();
   document.querySelectorAll('#filtrosStock .chip').forEach(ch => {
     ch.classList.toggle('activo', ch.dataset.filtro === filtroStock);
-    ch.querySelector('span').textContent = productos.filter(FILTROS_STOCK[ch.dataset.filtro]).length;
+    ch.querySelector('span').textContent = productos.filter(p => FILTROS_STOCK[ch.dataset.filtro](p)).length;
   });
   const lista = productos
-    .filter(FILTROS_STOCK[filtroStock])
+    .filter(p => FILTROS_STOCK[filtroStock](p))
     .filter(p => p.nombre.toLowerCase().includes(q));
 
   const cont = document.getElementById('listaProductos');
@@ -645,10 +645,10 @@ function renderFiados(animar = false) {
   const q = (document.getElementById('buscarFiado').value || '').toLowerCase();
   document.querySelectorAll('#filtrosFiados .chip').forEach(ch => {
     ch.classList.toggle('activo', ch.dataset.filtro === filtroFiados);
-    ch.querySelector('span').textContent = fiados.filter(FILTROS_FIADOS[ch.dataset.filtro]).length;
+    ch.querySelector('span').textContent = fiados.filter(f => FILTROS_FIADOS[ch.dataset.filtro](f)).length;
   });
   const lista = fiados
-    .filter(FILTROS_FIADOS[filtroFiados])
+    .filter(f => FILTROS_FIADOS[filtroFiados](f))
     .filter(f => (f.clienta || '').toLowerCase().includes(q));
 
   const cont = document.getElementById('listaFiados');
