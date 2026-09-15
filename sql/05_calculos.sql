@@ -345,9 +345,13 @@ grant execute on function public.registrar_abono(uuid, uuid, numeric) to authent
 -- negocio, solo totales por cuenta; y los cambios mandan el valor final, así
 -- repetirlos deja lo mismo.
 
+-- Cambió lo que devuelve (proveedores, antes proveedor): eso no se puede
+-- hacer con "create or replace", así que se borra y se vuelve a crear.
+drop function if exists public.admin_cuentas();
+
 create or replace function public.admin_cuentas()
 returns table (
-  user_id uuid, correo text, proveedor text, creada_en timestamptz, ultimo_acceso timestamptz,
+  user_id uuid, correo text, proveedores text[], creada_en timestamptz, ultimo_acceso timestamptz,
   es_admin boolean, activa boolean, cajas bigint, productos bigint, ventas bigint, por_cobrar numeric
 )
 language plpgsql
@@ -361,7 +365,12 @@ begin
     raise exception 'Solo para administradores';
   end if;
   return query
-  select u.id, u.email::text, coalesce(u.raw_app_meta_data ->> 'provider', 'email'),
+  -- Todas las formas de entrar de la cuenta (una cuenta creada con correo a
+  -- la que después se le sumó Google tiene las dos), no solo la primera.
+  select u.id, u.email::text,
+         case when jsonb_typeof(u.raw_app_meta_data -> 'providers') = 'array'
+              then array(select jsonb_array_elements_text(u.raw_app_meta_data -> 'providers'))
+              else array[coalesce(u.raw_app_meta_data ->> 'provider', 'email')] end,
          u.created_at, u.last_sign_in_at,
          coalesce(e.es_admin, false), coalesce(e.activa, true),
          (select count(*) from public.cajas c where c.owner_id = u.id),

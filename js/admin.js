@@ -49,6 +49,15 @@ const ACCIONES = {
   },
 };
 
+/* Todas las formas de entrar de la cuenta: una creada con correo a la que
+   después se le sumó Google tiene las dos. Si la base todavía devuelve solo
+   la primera (antes de correr el 05 nuevo), se muestra esa. */
+const NOMBRES_ACCESO = { email: 'correo', google: 'Google' };
+function formasDeEntrar(c) {
+  const lista = c.proveedores || [c.proveedor || 'email'];
+  return lista.map(p => NOMBRES_ACCESO[p] || p).join(' y ');
+}
+
 function botonRol(c, soyYo) {
   if (c.es_admin) {
     const bloqueo = soyYo ? ' disabled title="No podés quitarte tu propio rol"' : '';
@@ -73,10 +82,9 @@ function tarjeta(c) {
     c.activa ? '' : '<span class="insignia apagada">Desactivada</span>',
     soyYo ? '<span class="insignia yo">Vos</span>' : '',
   ].join('');
-  const acceso = c.proveedor === 'google' ? 'Google' : 'correo';
   return `<article class="tarjeta cuenta${c.activa ? '' : ' apagada'}">
     <div class="cuenta-cab"><strong>${escHtml(c.correo)}</strong>${insignias}</div>
-    <p class="cuenta-sub">Entra con ${acceso} · alta ${fecha(c.creada_en)} · último acceso ${fecha(c.ultimo_acceso)}</p>
+    <p class="cuenta-sub">Entra con ${formasDeEntrar(c)} · alta ${fecha(c.creada_en)} · último acceso ${fecha(c.ultimo_acceso)}</p>
     <dl class="cuenta-totales">
       <div><dt>Cajas</dt><dd>${c.cajas}</dd></div>
       <div><dt>Productos</dt><dd>${c.productos}</dd></div>

@@ -102,9 +102,9 @@ window.supabase = { createClient: () => {
   // El portal administrativo: con ?noadmin la cuenta no es administradora, y
   // con ?desactivada un administrador la desactivó.
   const CUENTAS = [
-    { user_id: 'u1', correo: 'prueba@cuenta-clara.test', proveedor: 'google', creada_en: '2026-09-01T12:00:00Z',
+    { user_id: 'u1', correo: 'prueba@cuenta-clara.test', proveedores: ['email', 'google'], creada_en: '2026-09-01T12:00:00Z',
       ultimo_acceso: '2026-09-15T12:00:00Z', es_admin: true, activa: true, cajas: 1, productos: 8, ventas: 7, por_cobrar: 1600 },
-    { user_id: 'u2', correo: 'ana@ejemplo.com', proveedor: 'email', creada_en: '2026-09-05T12:00:00Z',
+    { user_id: 'u2', correo: 'ana@ejemplo.com', proveedores: ['email'], creada_en: '2026-09-05T12:00:00Z',
       ultimo_acceso: null, es_admin: false, activa: true, cajas: 0, productos: 0, ventas: 0, por_cobrar: 0 },
     { user_id: 'u3', correo: 'luis@ejemplo.com', proveedor: 'google', creada_en: '2026-09-07T12:00:00Z',
       ultimo_acceso: '2026-09-08T12:00:00Z', es_admin: false, activa: false, cajas: 2, productos: 5, ventas: 3, por_cobrar: 250 },
@@ -398,6 +398,9 @@ try {
   const tarjetas = await portal.page.$$eval('#listaCuentas .cuenta', els => els.length);
   const propiaBloqueada = await portal.page.$eval('button[data-id="u1"][data-accion="rol"]', b => b.disabled);
   ok(tarjetas === 3 && propiaBloqueada, `el portal lista las cuentas (${tarjetas}) y no deja quitarse el propio rol`);
+  const formas = await portal.page.$$eval('#listaCuentas .cuenta-sub', els => els.map(e => e.textContent.split(' · ')[0]));
+  ok(formas.join(' | ') === 'Entra con correo y Google | Entra con correo | Entra con Google',
+     `muestra todas las formas de entrar, también con el formato viejo de la base (${formas.join(' | ')})`);
   const clic = (id, accion) => portal.page.$eval(`button[data-id="${id}"][data-accion="${accion}"]`, b => b.click());
   await clic('u2', 'rol');
   await espera(400);

@@ -373,7 +373,8 @@ console.log('\n━━━ G) Portal administrativo ━━━');
   };
   const { id: duena } = await uno(`select id from auth.users where email = 'odany_m@unitec.edu'`);
   await db.exec(`insert into auth.users (email, raw_app_meta_data) values
-    ('admin@ejemplo.com', '{"provider":"google"}'), ('otra@ejemplo.com', '{"provider":"email"}')`);
+    ('admin@ejemplo.com', '{"provider":"google"}'),
+    ('otra@ejemplo.com', '{"provider":"email","providers":["email","google"]}')`);
   const { id: admin } = await uno(`select id from auth.users where email = 'admin@ejemplo.com'`);
   const { id: otra } = await uno(`select id from auth.users where email = 'otra@ejemplo.com'`);
 
@@ -395,6 +396,9 @@ console.log('\n━━━ G) Portal administrativo ━━━');
   ok(lista.length === 3 && Number(deLaDuena.cajas) === 1 && Number(deLaDuena.productos) === 8
      && Number(deLaDuena.ventas) === 7 && Number(deLaDuena.por_cobrar) === 1600,
      `ve todas las cuentas con sus totales (${lista.length} cuentas; la de muestra: ${[deLaDuena.cajas, deLaDuena.productos, deLaDuena.ventas, deLaDuena.por_cobrar].join(' / ')})`);
+  const formas = id => (lista.find(c => c.user_id === id) || {}).proveedores || [];
+  ok(formas(otra).join(',') === 'email,google' && formas(admin).join(',') === 'google' && formas(duena).join(',') === 'email',
+     `muestra todas las formas de entrar de cada cuenta (${formas(otra).join(' y ')} / ${formas(admin)} / ${formas(duena)})`);
 
   // Roles
   await db.exec(`select public.admin_cambiar_rol('${otra}', true)`);
