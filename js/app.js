@@ -510,6 +510,22 @@ const esBajo = p => p.stock <= p.stock_minimo;
 const conPerdida = p => Number(p.precio) > 0 && Number(p.precio) < Number(p.costo_unitario);
 const FILTROS_STOCK = { todos: () => true, bajo: esBajo, perdida: conPerdida };
 
+/* Clase de la tarjeta según el estado del producto: la pérdida pesa más que
+   el stock bajo. */
+function estadoProducto(p) {
+  if (conPerdida(p)) return 'perdida';
+  if (esBajo(p)) return 'bajo';
+  return '';
+}
+
+/* La etiqueta del margen: "sin precio", o "+35%" / "-7%". */
+function etiquetaMargen(margen) {
+  if (margen === null) return '<span class="margen sin">sin precio</span>';
+  const clase = margen >= 0 ? 'pos' : 'neg';
+  const signo = margen >= 0 ? '+' : '';
+  return `<span class="margen ${clase}">${signo}${Math.round(margen * 100)}%</span>`;
+}
+
 function renderProductos(animar = false) {
   const q = (document.getElementById('buscarProd').value || '').toLowerCase();
   document.querySelectorAll('#filtrosStock .chip').forEach(ch => {
@@ -540,14 +556,12 @@ function renderProductos(animar = false) {
     const margen = precio > 0 && costo > 0 ? (precio - costo) / costo : null;
     const foto = Datos.urlFoto(p.foto_path);
     const quedan = Number(p.cantidad) > 0 ? Math.min(p.stock / p.cantidad, 1) * 100 : 0;
-    return `<article class="tarjeta prod-card ${perdida ? 'perdida' : bajo ? 'bajo' : ''}" style="--i:${i}">
+    return `<article class="tarjeta prod-card ${estadoProducto(p)}" style="--i:${i}">
       <div class="prod-foto">${foto ? `<img src="${foto}" alt="">` : '📦'}</div>
       <div class="prod-info">
         <div class="prod-cab">
           <strong>${esc(p.nombre)}</strong>
-          ${margen === null
-            ? '<span class="margen sin">sin precio</span>'
-            : `<span class="margen ${margen >= 0 ? 'pos' : 'neg'}">${margen >= 0 ? '+' : ''}${Math.round(margen * 100)}%</span>`}
+          ${etiquetaMargen(margen)}
         </div>
         <div class="prod-sub">${esc(p.caja)} · <span class="origen">${p.origen === 'lote' ? 'del lote' : 'de tienda'}</span></div>
 
@@ -705,8 +719,9 @@ function renderResumen() {
   const perdiendo = productos.filter(conPerdida);
   const alerta = document.getElementById('alertaPerdida');
   alerta.className = perdiendo.length ? 'alerta-perdida visible' : 'alerta-perdida';
+  const cuantos = perdiendo.length > 1 ? `${perdiendo.length} productos se están` : '1 producto se está';
   alerta.innerHTML = perdiendo.length
-    ? `<span class="alerta-ico">⚠️</span><div><b>${perdiendo.length} producto${perdiendo.length > 1 ? 's se están' : ' se está'}
+    ? `<span class="alerta-ico">⚠️</span><div><b>${cuantos}
          vendiendo por debajo del costo:</b><br>${perdiendo.map(p => esc(p.nombre)).join(', ')}</div>`
     : '';
 
