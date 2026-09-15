@@ -658,7 +658,7 @@ const FILTROS_FIADOS = {
 };
 
 /* Un color estable por persona, para que su círculo sea siempre el mismo. */
-const tonoDe = nombre => [...String(nombre)].reduce((a, c) => a + c.charCodeAt(0), 0) * 37 % 360;
+const tonoDe = nombre => [...String(nombre)].reduce((a, c) => a + c.codePointAt(0), 0) * 37 % 360;
 const inicialesDe = nombre => String(nombre).trim().split(/\s+/).slice(0, 2).map(p => p[0]).join('').toUpperCase();
 
 function renderFiados(animar = false) {
