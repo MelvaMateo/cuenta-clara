@@ -12,6 +12,7 @@ Se corren **en orden**, en Supabase → **SQL Editor** → *New query* → pegar
 | 06 | `06_fotos.sql` | El bucket de fotos y quién puede listar, subir o borrar | Sí |
 | 07 | `07_datos_muestra.sql` | Una caja de ejemplo en la cuenta que indiques (`v_correo`) | No |
 | 08 | `08_verificacion.sql` | Revisa estructura, seguridad y datos. Solo lee | No |
+| 09 | `09_exportar_esquema.sql` | Exporta el modelo de datos real en JSON (tablas, filas, columnas, índices, relaciones y políticas): es lo que se guarda en `docs/db-export.json`. Solo lee | No |
 
 ## Todos son idempotentes
 

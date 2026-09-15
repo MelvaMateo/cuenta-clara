@@ -311,5 +311,40 @@ console.log('\n━━━ E) La revisión sobre una base de la versión anterior 
   }
 }
 
+// ======================================================================= F
+console.log('\n━━━ F) Exportar el modelo de datos (09) ━━━');
+{
+  const db = await nueva();
+  await todo(db);
+  const exportar = async () => {
+    const e = (await db.exec(leer('09_exportar_esquema.sql'))).at(-1).rows[0].export;
+    return typeof e === 'string' ? JSON.parse(e) : e;
+  };
+  const exp = await exportar();
+  ok(exp.motor === 'postgres' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/.test(exp.generado_at)
+     && Math.abs(Date.parse(exp.generado_at) - Date.now()) < 5 * 60 * 1000,
+     `cabecera: motor postgres y generado_at de ahora (${exp.generado_at})`);
+  ok(JSON.stringify(Object.keys(exp)) === '["generado_at","motor","tablas"]'
+     && exp.tablas.every(t => JSON.stringify(Object.keys(t)) === '["nombre","filas","columnas","indices","relaciones","politicas_rls"]')
+     && exp.tablas.every(t => t.columnas.every(c => JSON.stringify(Object.keys(c)) === '["nombre","tipo","pk","nulo"]')),
+     'las claves son exactamente las del formato pedido');
+  ok(JSON.stringify(exp.tablas.map(t => t.nombre)) === JSON.stringify([...TABLAS].sort()),
+     `exporta las 6 tablas: ${exp.tablas.map(t => t.nombre).join(', ')}`);
+  ok(exp.tablas.every(t => t.columnas.some(c => c.nombre === 'id' && c.pk && !c.nulo && c.tipo === 'uuid')),
+     'todas tienen llave primaria (id uuid)');
+  const relaciones = exp.tablas.flatMap(t => t.relaciones);
+  ok(relaciones.length === 5 && relaciones.every(r => TABLAS.includes(r.referencia.split('.')[0])),
+     `5 relaciones entre tablas: ${relaciones.map(r => r.columna + '→' + r.referencia).join(', ')}`);
+  ok(exp.tablas.every(t => t.indices.length > 0 && t.politicas_rls.includes('solo lo propio')),
+     'cada tabla con índices y la política "solo lo propio"');
+  const conteo = {};
+  for (const t of TABLAS) conteo[t] = (await filas(db, `select count(*)::int n from public.${t}`))[0].n;
+  ok(exp.tablas.every(t => t.filas === conteo[t.nombre]),
+     `las filas coinciden con la base: ${exp.tablas.map(t => `${t.nombre} ${t.filas}`).join(', ')}`);
+  const otra = await exportar();
+  ok(JSON.stringify({ ...otra, generado_at: '' }) === JSON.stringify({ ...exp, generado_at: '' }),
+     'correrlo otra vez da lo mismo (solo cambia la fecha)');
+}
+
 console.log(fallas ? `\n✗ ${fallas} pruebas fallaron` : '\n✓ todas las pruebas pasaron');
 process.exitCode = fallas ? 1 : 0;
